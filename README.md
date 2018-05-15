@@ -7,7 +7,7 @@ Request Tracker (RT) is an open source issue tracking system.
 There is a docker image available https://hub.docker.com/r/netsandbox/request-tracker/  
 Use this command to pull it:  
 ```
-docker pull netsandbox/request-tracker
+# docker pull netsandbox/request-tracker
 ```
 Validate you have the image using this command: 
 ```
@@ -36,9 +36,12 @@ The default ```root``` user password is ```password```
 RT REST API doc http://rt-wiki.bestpractical.com/wiki/REST  
 rt python library https://pypi.org/project/rt/  
 
+rt python library installation:  
 ```
-pip install -r requests nose six rt
+# pip install -r requests nose six rt
 ```
+
+rt python library demo:  
 ```
 >>> import rt
 >>> tracker = rt.Rt('http://172.30.52.150:9081/REST/1.0/', 'root', 'password')
