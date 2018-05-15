@@ -1,6 +1,7 @@
 
 
-Request Tracker (RT) is an open source issue tracking system.
+Request Tracker (RT) is an open source issue tracking system.  
+RT REST API doc http://rt-wiki.bestpractical.com/wiki/REST  
 
 # Docker 
 
@@ -33,15 +34,19 @@ The default ```root``` user password is ```password```
 
 # Python
 
-RT REST API doc http://rt-wiki.bestpractical.com/wiki/REST  
-rt python library https://pypi.org/project/rt/  
+There are python libraries that provide an easy programming interface for dealing with RT:  
+- rtapi (https://github.com/Rickerd0613/rtapi) 
+- python-rtkit (https://github.com/z4r/python-rtkit)
+- rt (https://github.com/CZ-NIC/python-rt) 
 
-rt python library installation:  
+## rt python library
+
+### installation:  
 ```
 # pip install -r requests nose six rt
 ```
 
-rt python library demo:  
+### demo:  
 ```
 >>> import rt
 >>> tracker = rt.Rt('http://172.30.52.150:9081/REST/1.0/', 'root', 'password')
