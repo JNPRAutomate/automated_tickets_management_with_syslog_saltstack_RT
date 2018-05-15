@@ -39,13 +39,11 @@ There are python libraries that provide an easy programming interface for dealin
 - python-rtkit (https://github.com/z4r/python-rtkit)
 - rt (https://github.com/CZ-NIC/python-rt) 
 
-## rt python library
-
-Installation:  
+rt library installation:  
 ```
 # pip install -r requests nose six rt
 ```
-Python interactive session demo: 
+rt library interactive session demo:   
 ```
 >>> import rt
 >>> tracker = rt.Rt('http://172.30.52.150:9081/REST/1.0/', 'root', 'password')
@@ -71,3 +69,4 @@ True
 >>> tracker.logout()
 True
 ```
+# SaltStack
