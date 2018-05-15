@@ -9,11 +9,18 @@ Use this command to pull it:
 ```
 docker pull netsandbox/request-tracker
 ```
-And use this command to instanciate a container:  
+Validate you have the image using this command: 
+```
+# docker images
+REPOSITORY                   TAG                 IMAGE ID            CREATED             SIZE
+netsandbox/request-tracker   latest              9943a8484f85        6 months ago        539MB
+```
+Use this command to instanciate a container:  
 ```
 # docker run -d --rm --name rt -p 9081:80 netsandbox/request-tracker
 cb68b252ee39514483b8885fe6e720de51f309c18a5fdca690bdad0258f715d0
 ```
+use this command to list containers: 
 ```
 # docker ps
 CONTAINER ID        IMAGE                        COMMAND                  CREATED             STATUS                  PORTS                                                 NAMES
@@ -21,7 +28,7 @@ cb68b252ee39        netsandbox/request-tracker   "/usr/sbin/apache2..."   4 seco
 ```
 # GUI
 
-Then, access it via ```http://localhost:9081``` or ```http://host-ip:9081``` in a browser.  
+Access RT GUI with ```http://localhost:9081``` or ```http://host-ip:9081``` in a browser.  
 The default ```root``` user password is ```password```  
 
 # Python
