@@ -1,4 +1,4 @@
-
+# About RT
 
 Request Tracker (RT) is an open source issue tracking system.  
 RT REST API doc http://rt-wiki.bestpractical.com/wiki/REST  
@@ -41,12 +41,11 @@ There are python libraries that provide an easy programming interface for dealin
 
 ## rt python library
 
-### installation:  
+Installation:  
 ```
 # pip install -r requests nose six rt
 ```
-
-### demo:  
+Python interactive session demo: 
 ```
 >>> import rt
 >>> tracker = rt.Rt('http://172.30.52.150:9081/REST/1.0/', 'root', 'password')
