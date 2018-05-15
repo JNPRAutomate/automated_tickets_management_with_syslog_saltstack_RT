@@ -1,9 +1,11 @@
-# About Request Tracker
+# Request Tracker 
+
+## About Request Tracker
 
 Request Tracker (RT) is an open source issue tracking system.  
 RT REST API doc http://rt-wiki.bestpractical.com/wiki/REST  
 
-# RT Docker image 
+## RT Docker image 
 
 There is a docker image available https://hub.docker.com/r/netsandbox/request-tracker/  
 Use this command to pull it:  
@@ -28,27 +30,27 @@ CONTAINER ID        IMAGE                        COMMAND                  CREATE
 cb68b252ee39        netsandbox/request-tracker   "/usr/sbin/apache2..."   4 seconds ago       Up 3 seconds            0.0.0.0:9081->80/tcp                                  rt
 ```
 
-# RT credentials
+## RT credentials
 The default ```root``` user password is ```password```  
 
-# RT GUI
+## RT GUI
 Access RT GUI with ```http://localhost:9081``` or ```http://host-ip:9081``` in a browser.  
 
 
-# Python libraries for RT 
+## Python libraries for RT 
 
 There are python libraries that provide an easy programming interface for dealing with RT:  
 - [rtapi](https://github.com/Rickerd0613/rtapi) 
 - [python-rtkit](https://github.com/z4r/python-rtkit)
 - [rt](https://github.com/CZ-NIC/python-rt) 
 
-## rt library 
+### rt library 
 
-### installation  
+#### installation  
 ```
 # pip install -r requests nose six rt
 ```
-### interactive session demo   
+#### interactive session demo   
 ```
 >>> import rt
 >>> tracker = rt.Rt('http://172.30.52.150:9081/REST/1.0/', 'root', 'password')
@@ -87,3 +89,49 @@ rt:
 
 Add this [file](request_tracker_saltstack_runner.py) to your runners
 
+Test your runner manually from the master: 
+```
+salt-run request_tracker_saltstack_runner.create_ticket subject='test' text='test text'
+```
+
+##  Salt reactor
+
+The reactor binds sls files to event tags. The reactor has a list of event tags to be matched, and each event tag has a list of reactor SLS files to be run. So these sls files define the SaltStack reactions.  
+
+Update the reactor 
+```
+# more /etc/salt/master.d/reactor.conf
+reactor: 
+   - 'jnpr/syslog/*/SNMP_TRAP_LINK_*':
+       - /srv/reactor/create_ticket.sls
+```
+This reactor binds ```jnpr/syslog/*/SNMP_TRAP_LINK_*``` to ```/srv/reactor/create_ticket.sls```  
+
+Restart the Salt master:
+```
+service salt-master stop
+service salt-master start
+```
+
+The command ```salt-run reactor.list``` lists currently configured reactors:  
+```
+salt-run reactor.list
+```
+
+Create the sls file ```/srv/reactor/create_ticket.sls```.  
+```
+# more /srv/reactor/create_ticket.sls 
+{% if data['data'] is defined %}
+{% set d = data['data'] %}
+{% set event_tag = data['tag'] %}
+{% else %}
+{% set d = data %}
+{% set event_tag = tag %}
+{% endif %}
+
+create a ticket:
+  runner.request_tracker.create_ticket:
+    - kwarg:
+        subject: "Device {{ d['device_ip'] }} configuration is not inline with the golden configuration rules described in {{ d['test'] }}"
+        text: "Device {{ d['device_ip'] }} configuration is not inline with the golden configuration rules described in {{ d['test'] }}"
+```
