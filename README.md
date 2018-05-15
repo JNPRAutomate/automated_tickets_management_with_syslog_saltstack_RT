@@ -2,12 +2,14 @@
 
 Request Tracker (RT) is an open source issue tracking system.
 
-# docker 
+# Docker 
 
-https://hub.docker.com/r/netsandbox/request-tracker/
-
-docker run -it --rm --name rt -p 9081:80 netsandbox/request-tracker
-
+There is a docker image available https://hub.docker.com/r/netsandbox/request-tracker/  
+Use this command to pull it:  
+```
+docker pull netsandbox/request-tracker
+```
+And use this command to instanciate a container:  
 ```
 # docker run -d --rm --name rt -p 9081:80 netsandbox/request-tracker
 cb68b252ee39514483b8885fe6e720de51f309c18a5fdca690bdad0258f715d0
@@ -17,15 +19,15 @@ cb68b252ee39514483b8885fe6e720de51f309c18a5fdca690bdad0258f715d0
 CONTAINER ID        IMAGE                        COMMAND                  CREATED             STATUS                  PORTS                                                 NAMES
 cb68b252ee39        netsandbox/request-tracker   "/usr/sbin/apache2..."   4 seconds ago       Up 3 seconds            0.0.0.0:9081->80/tcp                                  rt
 ```
-# gui
+# GUI
 
-Then, access it via ```http://localhost:9081``` or ```http://host-ip:9081``` in a browser.
-The default ```root``` user password is ```password```
+Then, access it via ```http://localhost:9081``` or ```http://host-ip:9081``` in a browser.  
+The default ```root``` user password is ```password```  
 
-# python
+# Python
 
-RT REST API doc http://rt-wiki.bestpractical.com/wiki/REST 
-rt python library https://pypi.org/project/rt/
+RT REST API doc http://rt-wiki.bestpractical.com/wiki/REST  
+rt python library https://pypi.org/project/rt/  
 
 ```
 pip install -r requests nose six rt
