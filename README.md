@@ -27,17 +27,20 @@ use this command to list containers:
 CONTAINER ID        IMAGE                        COMMAND                  CREATED             STATUS                  PORTS                                                 NAMES
 cb68b252ee39        netsandbox/request-tracker   "/usr/sbin/apache2..."   4 seconds ago       Up 3 seconds            0.0.0.0:9081->80/tcp                                  rt
 ```
-# RT GUI
 
-Access RT GUI with ```http://localhost:9081``` or ```http://host-ip:9081``` in a browser.  
+# RT credentials
 The default ```root``` user password is ```password```  
+
+# RT GUI
+Access RT GUI with ```http://localhost:9081``` or ```http://host-ip:9081``` in a browser.  
+
 
 # Python libraries for RT 
 
 There are python libraries that provide an easy programming interface for dealing with RT:  
-- rtapi (https://github.com/Rickerd0613/rtapi) 
-- python-rtkit (https://github.com/z4r/python-rtkit)
-- rt (https://github.com/CZ-NIC/python-rt) 
+- [rtapi](https://github.com/Rickerd0613/rtapi) 
+- [python-rtkit](https://github.com/z4r/python-rtkit)
+- [rt](https://github.com/CZ-NIC/python-rt) 
 
 ## rt library 
 
@@ -80,3 +83,7 @@ rt:
    username: root
    password: password
 ```
+## Runner 
+
+Add this [file](request_tracker_saltstack_runner.py) to your runners
+
