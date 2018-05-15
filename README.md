@@ -78,7 +78,9 @@ True
 ```
 # SaltStack
 
-## Update the pillars with the required rt details  
+## Pillars 
+
+Update the pillars with the required rt details  
 ```
 rt:
    uri: 'http://172.30.52.150:9081/REST/1.0/'
@@ -89,12 +91,12 @@ rt:
 
 Add this [file](request_tracker_saltstack_runner.py) to your runners
 
-Test your runner manually from the master: 
+Then, test your runner manually from the master: 
 ```
 salt-run request_tracker_saltstack_runner.create_ticket subject='test' text='test text'
 ```
 
-##  Salt reactor
+##  Reactor
 
 The reactor binds sls files to event tags. The reactor has a list of event tags to be matched, and each event tag has a list of reactor SLS files to be run. So these sls files define the SaltStack reactions.  
 
@@ -113,7 +115,7 @@ service salt-master stop
 service salt-master start
 ```
 
-The command ```salt-run reactor.list``` lists currently configured reactors:  
+This command lists currently configured reactors:  
 ```
 salt-run reactor.list
 ```
@@ -123,15 +125,12 @@ Create the sls file ```/srv/reactor/create_ticket.sls```.
 # more /srv/reactor/create_ticket.sls 
 {% if data['data'] is defined %}
 {% set d = data['data'] %}
-{% set event_tag = data['tag'] %}
 {% else %}
 {% set d = data %}
-{% set event_tag = tag %}
 {% endif %}
-
 create a ticket:
-  runner.request_tracker.create_ticket:
+  runner.request_tracker_saltstack_runner.create_ticket:
     - kwarg:
-        subject: "Device {{ d['device_ip'] }} configuration is not inline with the golden configuration rules described in {{ d['test'] }}"
-        text: "Device {{ d['device_ip'] }} configuration is not inline with the golden configuration rules described in {{ d['test'] }}"
+        subject: "interface xxx on device {{ d['hostname'] }} moved from up to down"
+        text: "interface xxx on device {{ d['hostname'] }} moved from up to down"
 ```
