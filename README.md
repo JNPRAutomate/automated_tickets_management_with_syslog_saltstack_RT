@@ -1,9 +1,9 @@
-# About RT
+# About Request Tracker
 
 Request Tracker (RT) is an open source issue tracking system.  
 RT REST API doc http://rt-wiki.bestpractical.com/wiki/REST  
 
-# Docker 
+# RT Docker image 
 
 There is a docker image available https://hub.docker.com/r/netsandbox/request-tracker/  
 Use this command to pull it:  
@@ -27,23 +27,25 @@ use this command to list containers:
 CONTAINER ID        IMAGE                        COMMAND                  CREATED             STATUS                  PORTS                                                 NAMES
 cb68b252ee39        netsandbox/request-tracker   "/usr/sbin/apache2..."   4 seconds ago       Up 3 seconds            0.0.0.0:9081->80/tcp                                  rt
 ```
-# GUI
+# RT GUI
 
 Access RT GUI with ```http://localhost:9081``` or ```http://host-ip:9081``` in a browser.  
 The default ```root``` user password is ```password```  
 
-# Python
+# Python libraries for RT 
 
 There are python libraries that provide an easy programming interface for dealing with RT:  
 - rtapi (https://github.com/Rickerd0613/rtapi) 
 - python-rtkit (https://github.com/z4r/python-rtkit)
 - rt (https://github.com/CZ-NIC/python-rt) 
 
-rt library installation:  
+## rt library 
+
+### installation  
 ```
 # pip install -r requests nose six rt
 ```
-rt library interactive session demo:   
+### interactive session demo   
 ```
 >>> import rt
 >>> tracker = rt.Rt('http://172.30.52.150:9081/REST/1.0/', 'root', 'password')
@@ -70,3 +72,11 @@ True
 True
 ```
 # SaltStack
+
+## Update the pillars with the required rt details  
+```
+rt:
+   uri: 'http://172.30.52.150:9081/REST/1.0/'
+   username: root
+   password: password
+```
