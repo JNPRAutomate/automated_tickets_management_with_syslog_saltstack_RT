@@ -66,7 +66,7 @@ ticket/2
 4
 >>> tracker.edit_ticket(4, Priority=3)
 True
->>> tracker.reply(4, text='Do you know Starbucks???')
+>>> tracker.reply(4, text='Write here the notes you want to add to the ticket')
 True
 >>> tracker.logout()
 True
