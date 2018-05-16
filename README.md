@@ -1,11 +1,9 @@
 # Request Tracker 
 
-## About Request Tracker
-
 Request Tracker (RT) is an open source issue tracking system.  
 RT REST API doc http://rt-wiki.bestpractical.com/wiki/REST  
 
-## RT Docker image 
+## RT installation 
 
 There is a docker image available https://hub.docker.com/r/netsandbox/request-tracker/  
 ```
@@ -76,7 +74,7 @@ True
 Update the pillars with the required rt details.  
 [Here's an example](rt_pillars.sls)
 
-## Runner 
+## Runners 
 
 Add this [file](request_tracker_saltstack_runner.py) to your runners
 
@@ -85,7 +83,7 @@ Then, test your runner manually from the master:
 salt-run request_tracker_saltstack_runner.create_ticket subject='test' text='test text'
 ```
 
-##  Reactor
+##  Reactor configuration file
 
 The reactor binds sls files to event tags. The reactor has a list of event tags to be matched, and each event tag has a list of reactor SLS files to be run. So these sls files define the SaltStack reactions.  
 
@@ -102,7 +100,7 @@ This command lists currently configured reactors:
 salt-run reactor.list
 ```
 
-## sls file
+## sls files
 Create the sls file that will be fired automatically by the reactor.  
 [Here's an example](create_interface_status_change_ticket.sls)  
 
