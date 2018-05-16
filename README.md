@@ -146,6 +146,7 @@ So:
 ## Update the pillars 
 
 Update the pillars with the required rt details.  
+
 [Here's an example](rt_pillars.sls)
 
 Verify:  
@@ -155,8 +156,8 @@ Verify:
 
 ## Update the runners 
 
-Add this [file](request_tracker_saltstack_runner.py) to your runners
-
+Add this [file](request_tracker_saltstack_runner.py) to your runner directory.  
+The runners are in the directory /srv/runners on the master.  
 Then, test your runner manually from the master: 
 ```
 salt-run request_tracker_saltstack_runner.create_ticket subject='test' text='test text'
@@ -168,7 +169,8 @@ salt-run request_tracker_saltstack_runner.change_ticket_status_to_resolved ticke
 
 The reactor binds sls files to event tags. The reactor has a list of event tags to be matched, and each event tag has a list of reactor SLS files to be run. So these sls files define the SaltStack reactions.  
 
-Update your reactor configuration file.  
+Update your reactor configuration file (```/etc/salt/master.d/reactor.conf```)  
+
 [Here's an example](reactor.conf). This reactor configuration file binds ```jnpr/syslog/*/SNMP_TRAP_LINK_*``` to ```/srv/reactor/create_interface_status_change_ticket.sls```  
 
 Restart the Salt master:
@@ -182,7 +184,7 @@ salt-run reactor.list
 ```
 
 ## Update the sls files
-Create the sls file that will be fired automatically by the reactor.  
+Create the sls file  ```/srv/reactor/create_interface_status_change_ticket.sls```  that will be fired automatically by the reactor.  
 [Here's an example](create_interface_status_change_ticket.sls)  
 
 # Junos devices 
@@ -215,7 +217,7 @@ Run this command on the master:
 
 ## Trigger a syslog message from a junos device 
 
-ssh to a device a disable an interface. 
+ssh to a device and disable an interface. 
 
 ```
 [edit]
