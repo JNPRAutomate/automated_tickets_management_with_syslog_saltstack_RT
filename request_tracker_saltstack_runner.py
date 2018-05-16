@@ -21,21 +21,16 @@ def connect_to_rt():
 
 def check_if_a_ticket_already_exist(subject):
    tracker=connect_to_rt()
-   ticket_already_exist = False
+   id=0
    for item in tracker.search(Queue='General'):
-       if item['Subject'] == subject:
-           ticket_already_exist = True
+       if (item['Subject'] == subject) and (item['Status'] in ['open', 'new']):
            id=str(item['id']).split('/')[-1]
-       if ticket_already_exist:
-           tracker.logout()
-           return id
-       else:
-           tracker.logout()
-           return False
+   tracker.logout()
+   return id
 
 def create_ticket(subject, text):
     tracker=connect_to_rt()
-    if check_if_a_ticket_already_exist(subject) == False:
+    if check_if_a_ticket_already_exist(subject) == 0:
         ticket_id = tracker.create_ticket(Queue='General', Subject=subject, Text=text)
         tracker.logout()
         return ticket_id
@@ -49,4 +44,3 @@ def update_ticket(ticket_id, text):
     tracker=connect_to_rt()
     tracker.reply(ticket_id, text=text)
     tracker.logout()
-
