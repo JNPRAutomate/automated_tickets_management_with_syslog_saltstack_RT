@@ -5,7 +5,7 @@
 {% endif %}
 {% set interface = d['message'].split(' ')[-1] %}
 {% set interface = interface.split('.')[0] %}
-create a ticket:
+create a new ticket or update the existing one:
   runner.request_tracker_saltstack_runner.create_ticket:
     - kwarg:
         subject: "device {{ d['hostname'] }} had its interface {{ interface }} status that changed"
