@@ -8,7 +8,6 @@ RT REST API doc http://rt-wiki.bestpractical.com/wiki/REST
 ## RT Docker image 
 
 There is a docker image available https://hub.docker.com/r/netsandbox/request-tracker/  
-Use this command to pull it:  
 ```
 # docker pull netsandbox/request-tracker
 ```
@@ -33,7 +32,6 @@ The default ```root``` user password is ```password```
 ## RT GUI
 Access RT GUI with ```http://localhost:9081``` or ```http://host-ip:9081``` in a browser.  
 
-
 ## Python libraries for RT 
 
 There are python libraries that provide an easy programming interface for dealing with RT:  
@@ -41,13 +39,11 @@ There are python libraries that provide an easy programming interface for dealin
 - [python-rtkit](https://github.com/z4r/python-rtkit)
 - [rt](https://github.com/CZ-NIC/python-rt) 
 
-### rt library 
-
-#### installation  
+rt library installation  
 ```
 # pip install -r requests nose six rt
 ```
-#### demo   
+rt library demo   
 ```
 >>> import rt
 >>> tracker = rt.Rt('http://172.30.52.150:9081/REST/1.0/', 'root', 'password')
@@ -77,13 +73,9 @@ True
 
 ## Pillars 
 
-Update the pillars with the required rt details  
-```
-rt:
-   uri: 'http://172.30.52.150:9081/REST/1.0/'
-   username: root
-   password: password
-```
+Update the pillars with the required rt details.  
+[Here's an example](rt_pillars.sls)
+
 ## Runner 
 
 Add this [file](request_tracker_saltstack_runner.py) to your runners
@@ -97,14 +89,7 @@ salt-run request_tracker_saltstack_runner.create_ticket subject='test' text='tes
 
 The reactor binds sls files to event tags. The reactor has a list of event tags to be matched, and each event tag has a list of reactor SLS files to be run. So these sls files define the SaltStack reactions.  
 
-Update the reactor 
-```
-# more /etc/salt/master.d/reactor.conf
-reactor: 
-   - 'jnpr/syslog/*/SNMP_TRAP_LINK_*':
-     - /srv/reactor/create_interface_status_change_ticket.sls
-```
-This reactor binds ```jnpr/syslog/*/SNMP_TRAP_LINK_*``` to ```/srv/reactor/create_interface_status_change_ticket.sls```  
+Update your reactor configuration file. [Here's an example](reactor.conf). This reactor configuration file binds ```jnpr/syslog/*/SNMP_TRAP_LINK_*``` to ```/srv/reactor/create_interface_status_change_ticket.sls```  
 
 Restart the Salt master:
 ```
@@ -117,19 +102,6 @@ salt-run reactor.list
 ```
 
 ## sls file
-Create the sls file ```/srv/reactor/create_interface_status_change_ticket.sls```.  
-```
-# more /srv/reactor/create_interface_status_change_ticket.sls
-{% if data['data'] is defined %}
-{% set d = data['data'] %}
-{% else %}
-{% set d = data %}
-{% endif %}
-{% set interface = d['message'].split(' ')[-1] %}
-{% set interface = interface.split('.')[0] %}
-create a ticket:
-  runner.request_tracker_saltstack_runner.create_ticket:
-    - kwarg:
-        subject: "device {{ d['hostname'] }} had its interface {{ interface }} status that changed"
-        text: " {{ d['message'] }}"
-```
+Create the sls file that will be fired automatically by the reactor.  
+[Here's an example](create_interface_status_change_ticket.sls)  
+
