@@ -35,7 +35,7 @@ def check_if_a_ticket_already_exist(subject):
 
 def create_ticket(subject, text):
     tracker=connect_to_rt()
-    if check_if_a_ticket_already_exist(subject) == None:
+    if check_if_a_ticket_already_exist(subject) == False:
         ticket_id = tracker.create_ticket(Queue='General', Subject=subject, Text=text)
         tracker.logout()
         return ticket_id
