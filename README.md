@@ -105,9 +105,9 @@ Update the reactor
 # more /etc/salt/master.d/reactor.conf
 reactor: 
    - 'jnpr/syslog/*/SNMP_TRAP_LINK_*':
-       - /srv/reactor/create_ticket.sls
+     - /srv/reactor/create_interface_status_change_ticket.sls
 ```
-This reactor binds ```jnpr/syslog/*/SNMP_TRAP_LINK_*``` to ```/srv/reactor/create_ticket.sls```  
+This reactor binds ```jnpr/syslog/*/SNMP_TRAP_LINK_*``` to ```/srv/reactor/create_interface_status_change_ticket.sls```  
 
 Restart the Salt master:
 ```
@@ -120,17 +120,75 @@ This command lists currently configured reactors:
 salt-run reactor.list
 ```
 
-Create the sls file ```/srv/reactor/create_ticket.sls```.  
+Create the sls file ```/srv/reactor/create_interface_status_change_ticket.sls```.  
 ```
-# more /srv/reactor/create_ticket.sls 
+# more /srv/reactor/create_interface_status_change_ticket.sls
 {% if data['data'] is defined %}
 {% set d = data['data'] %}
 {% else %}
 {% set d = data %}
 {% endif %}
+{% set interface = d['message'].split(' ')[-1] %}
+{% set interface = interface.split('.')[0] %}
 create a ticket:
   runner.request_tracker_saltstack_runner.create_ticket:
     - kwarg:
-        subject: "interface xxx on device {{ d['hostname'] }} moved from up to down"
-        text: "interface xxx on device {{ d['hostname'] }} moved from up to down"
+        subject: "device {{ d['hostname'] }} had its interface {{ interface }} status that changed"
+        text: " {{ d['message'] }}"
+```
+
+
+```
+# more /srv/runners/request_tracker_saltstack_runner.py
+import rt
+import salt.runner
+
+def get_rt_pillars():
+    opts = salt.config.master_config('/etc/salt/master')
+    runner = salt.runner.RunnerClient(opts)
+    pillar = runner.cmd('pillar.show_pillar')
+    uri = pillar['rt']['uri']
+    username = pillar['rt']['username']
+    password = pillar['rt']['password']
+    return {'uri': uri, 'username': username, 'password': password}
+
+def connect_to_rt():
+   rt_pillars=get_rt_pillars()
+   uri = rt_pillars['uri']
+   username = rt_pillars['username']
+   password = rt_pillars['password']
+   tracker = rt.Rt(uri, username, password)
+   tracker.login()
+   return tracker
+
+def check_if_a_ticket_already_exist(subject):
+   tracker=connect_to_rt()
+   ticket_already_exist = False
+   for item in tracker.search(Queue='General'):
+       if item['Subject'] == subject:
+           ticket_already_exist = True
+           id=str(item['id']).split('/')[-1]
+       if ticket_already_exist:
+           tracker.logout()
+           return id
+       else:
+           tracker.logout()
+           return False
+
+def create_ticket(subject, text):
+    tracker=connect_to_rt()
+    if check_if_a_ticket_already_exist(subject) == None:
+        ticket_id = tracker.create_ticket(Queue='General', Subject=subject, Text=text)
+        tracker.logout()
+        return ticket_id
+    else:
+        ticket_id = check_if_a_ticket_already_exist(subject)
+        update_ticket(ticket_id, text)
+        tracker.logout()
+        return ticket_id
+
+def update_ticket(ticket_id, text):
+    tracker=connect_to_rt()
+    tracker.reply(ticket_id, text=text)
+    tracker.logout()
 ```
