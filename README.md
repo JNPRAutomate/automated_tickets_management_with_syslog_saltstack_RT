@@ -12,18 +12,15 @@ Use this command to pull it:
 ```
 # docker pull netsandbox/request-tracker
 ```
-Validate you have the image using this command: 
 ```
 # docker images
 REPOSITORY                   TAG                 IMAGE ID            CREATED             SIZE
 netsandbox/request-tracker   latest              9943a8484f85        6 months ago        539MB
 ```
-Use this command to instanciate a container:  
 ```
 # docker run -d --rm --name rt -p 9081:80 netsandbox/request-tracker
 cb68b252ee39514483b8885fe6e720de51f309c18a5fdca690bdad0258f715d0
 ```
-use this command to list containers: 
 ```
 # docker ps
 CONTAINER ID        IMAGE                        COMMAND                  CREATED             STATUS                  PORTS                                                 NAMES
@@ -50,7 +47,7 @@ There are python libraries that provide an easy programming interface for dealin
 ```
 # pip install -r requests nose six rt
 ```
-#### interactive session demo   
+#### demo   
 ```
 >>> import rt
 >>> tracker = rt.Rt('http://172.30.52.150:9081/REST/1.0/', 'root', 'password')
@@ -114,12 +111,12 @@ Restart the Salt master:
 service salt-master stop
 service salt-master start
 ```
-
 This command lists currently configured reactors:  
 ```
 salt-run reactor.list
 ```
 
+## sls file
 Create the sls file ```/srv/reactor/create_interface_status_change_ticket.sls```.  
 ```
 # more /srv/reactor/create_interface_status_change_ticket.sls
@@ -135,60 +132,4 @@ create a ticket:
     - kwarg:
         subject: "device {{ d['hostname'] }} had its interface {{ interface }} status that changed"
         text: " {{ d['message'] }}"
-```
-
-
-```
-# more /srv/runners/request_tracker_saltstack_runner.py
-import rt
-import salt.runner
-
-def get_rt_pillars():
-    opts = salt.config.master_config('/etc/salt/master')
-    runner = salt.runner.RunnerClient(opts)
-    pillar = runner.cmd('pillar.show_pillar')
-    uri = pillar['rt']['uri']
-    username = pillar['rt']['username']
-    password = pillar['rt']['password']
-    return {'uri': uri, 'username': username, 'password': password}
-
-def connect_to_rt():
-   rt_pillars=get_rt_pillars()
-   uri = rt_pillars['uri']
-   username = rt_pillars['username']
-   password = rt_pillars['password']
-   tracker = rt.Rt(uri, username, password)
-   tracker.login()
-   return tracker
-
-def check_if_a_ticket_already_exist(subject):
-   tracker=connect_to_rt()
-   ticket_already_exist = False
-   for item in tracker.search(Queue='General'):
-       if item['Subject'] == subject:
-           ticket_already_exist = True
-           id=str(item['id']).split('/')[-1]
-       if ticket_already_exist:
-           tracker.logout()
-           return id
-       else:
-           tracker.logout()
-           return False
-
-def create_ticket(subject, text):
-    tracker=connect_to_rt()
-    if check_if_a_ticket_already_exist(subject) == None:
-        ticket_id = tracker.create_ticket(Queue='General', Subject=subject, Text=text)
-        tracker.logout()
-        return ticket_id
-    else:
-        ticket_id = check_if_a_ticket_already_exist(subject)
-        update_ticket(ticket_id, text)
-        tracker.logout()
-        return ticket_id
-
-def update_ticket(ticket_id, text):
-    tracker=connect_to_rt()
-    tracker.reply(ticket_id, text=text)
-    tracker.logout()
 ```
