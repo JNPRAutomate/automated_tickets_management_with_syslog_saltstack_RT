@@ -44,3 +44,8 @@ def update_ticket(ticket_id, text):
     tracker=connect_to_rt()
     tracker.reply(ticket_id, text=text)
     tracker.logout()
+
+def change_ticket_status_to_resolved(ticket_id):
+    tracker=connect_to_rt()
+    tracker.edit_ticket(ticket_id, Status="Resolved")
+    tracker.logout()
