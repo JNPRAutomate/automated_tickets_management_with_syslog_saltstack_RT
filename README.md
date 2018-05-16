@@ -190,7 +190,7 @@ Create the sls file  ```/srv/reactor/create_interface_status_change_ticket.sls``
 # Junos devices 
 
 The Salt master is listening junos syslog messages on port 516.  
-Configure your junos devices to send the sylog messages ```SNMP_TRAP_LINK``` to the SaltStack master ip address on port 516.  
+Configure your junos devices to send the sylog messages ```SNMP_TRAP_LINK_UP``` and ```SNMP_TRAP_LINK_DOWN``` to the SaltStack master ip address on port 516.  
 ```
 lab@dc-vmx-2> show configuration system syslog host 172.30.52.150 | display set
 set system syslog host 172.30.52.150 any any
