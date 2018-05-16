@@ -72,10 +72,12 @@ Install the rt library
 ```
 # pip install -r requests nose six rt
 ```
+Verify
 ```
 # pip list
 ```
-Verify using a python interactive session:
+Double check using a python interactive session.  
+Example:  
 ```
 # python
 >>> import rt
@@ -183,3 +185,27 @@ salt-run reactor.list
 Create the sls file that will be fired automatically by the reactor.  
 [Here's an example](create_interface_status_change_ticket.sls)  
 
+
+# Run the demo 
+
+## Watch the syslog messages received by the SaltStack master
+
+Run this command on the master to see the syslog messages sent by junos devices:  
+```
+# tcpdump port 516 -XX 
+```
+## Watch the ZMQ messages  
+
+Salt provides a runner that displays events in real-time as they are received on the Salt master.  
+Run this command on the master:   
+```
+# salt-run state.event pretty=True
+```
+
+## Trigger a syslog message from a junos device 
+
+ssh to a device a disable an interface. 
+
+## Verify on RT GUI
+
+SaltStack created a ticket or updated an existing ticket for this issue.  
