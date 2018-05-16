@@ -1,9 +1,37 @@
+# About this project 
+
+Junos automation demo using SaltStack and a ticketing system (Request Tracker). 
+
+## Demo overview  
+- Junos devices send syslog messages to SaltStack.  
+- SaltStack automatically creates a new ticket (or update an existing ticket) using RT (Request Tracker) 
+
+## Demo building blocks 
+- Junos  devices
+- SaltStack
+- RT (Request Tracker) 
+
+## Building blocks role 
+
+### Request Tracker 
+- This is the ticketing system. The tickets are automatically created and updated by SaltStack based on Junos syslog messages. 
+
+### Junos devices
+- They send syslog messages to SaltStack
+
+### SaltStack  
+- The Salt master listens to syslog messages sent by junos devices
+- The Salt master generates a ZMQ message to the event bus when a junos syslog message is received. The ZMQ message has a tag and data. The data structure is a dictionary, which contains information about the event.
+- The Salt reactor binds sls files to event tags. The reactor has a list of event tags to be matched, and each event tag has a list of reactor SLS files to be run. So these sls files define the SaltStack reactions.
+- The sls reactor file used in this content does the following: it parses the data from the ZMQ message to extract data (the network device name, and additional details). It then passes the data extracted to a runner (python script).  
+- The runner creates a new ticket (or update an existing ticket) using RT (Request Tracker) 
+
 # Request Tracker 
 
 Request Tracker (RT) is an open source issue tracking system.  
 RT REST API doc http://rt-wiki.bestpractical.com/wiki/REST  
 
-## RT installation 
+## install RT
 
 There is a docker image available https://hub.docker.com/r/netsandbox/request-tracker/  
 ```
@@ -24,11 +52,10 @@ CONTAINER ID        IMAGE                        COMMAND                  CREATE
 cb68b252ee39        netsandbox/request-tracker   "/usr/sbin/apache2..."   4 seconds ago       Up 3 seconds            0.0.0.0:9081->80/tcp                                  rt
 ```
 
-## RT credentials
-The default ```root``` user password is ```password```  
 
 ## RT GUI
 Access RT GUI with ```http://localhost:9081``` or ```http://host-ip:9081``` in a browser.  
+The default ```root``` user password is ```password```  
 
 ## Python libraries for RT 
 
@@ -68,6 +95,15 @@ True
 True
 ```
 # SaltStack
+
+## Install SaltStack
+
+This is not covered by this documentation.
+
+## Install the rt python library 
+```
+# pip install -r requests nose six rt
+```
 
 ## Pillars 
 
