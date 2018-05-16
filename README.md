@@ -82,7 +82,9 @@ Then, test your runner manually from the master:
 ```
 salt-run request_tracker_saltstack_runner.create_ticket subject='test' text='test text'
 ```
-
+```
+salt-run request_tracker_saltstack_runner.change_ticket_status_to_resolved ticket_id=1
+```
 ##  Reactor configuration file
 
 The reactor binds sls files to event tags. The reactor has a list of event tags to be matched, and each event tag has a list of reactor SLS files to be run. So these sls files define the SaltStack reactions.  
