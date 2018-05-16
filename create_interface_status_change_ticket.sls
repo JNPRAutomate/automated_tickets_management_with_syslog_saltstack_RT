@@ -1,5 +1,3 @@
-```
-# more /srv/reactor/create_interface_status_change_ticket.sls
 {% if data['data'] is defined %}
 {% set d = data['data'] %}
 {% else %}
