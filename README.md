@@ -185,6 +185,16 @@ salt-run reactor.list
 Create the sls file that will be fired automatically by the reactor.  
 [Here's an example](create_interface_status_change_ticket.sls)  
 
+# Junos devices 
+
+The Salt master is listening junos syslog messages on port 516.  
+Configure your junos devices to send the sylog messages ```SNMP_TRAP_LINK``` to the SaltStack master ip address on port 516.  
+```
+lab@dc-vmx-2> show configuration system syslog host 172.30.52.150 | display set
+set system syslog host 172.30.52.150 any any
+set system syslog host 172.30.52.150 match SNMP_TRAP_LINK
+set system syslog host 172.30.52.150 port 516
+```
 
 # Run the demo 
 
@@ -194,6 +204,7 @@ Run this command on the master to see the syslog messages sent by junos devices:
 ```
 # tcpdump port 516 -XX 
 ```
+
 ## Watch the ZMQ messages  
 
 Salt provides a runner that displays events in real-time as they are received on the Salt master.  
@@ -206,6 +217,53 @@ Run this command on the master:
 
 ssh to a device a disable an interface. 
 
+```
+[edit]
+lab@dc-vmx-2# run show interfaces terse ge-0/0/0
+Interface               Admin Link Proto    Local                 Remote
+ge-0/0/0                up    up
+ge-0/0/0.0              up    up   inet     192.168.1.2/24
+                                   multiservice
+
+[edit]
+lab@dc-vmx-2# set interfaces ge-0/0/0 disable
+
+[edit]
+lab@dc-vmx-2# show | compare
+[edit interfaces ge-0/0/0]
++   disable;
+
+[edit]
+lab@dc-vmx-2# commit
+commit complete
+
+[edit]
+lab@dc-vmx-2# run show interfaces terse ge-0/0/0
+Interface               Admin Link Proto    Local                 Remote
+ge-0/0/0                down  down
+ge-0/0/0.0              up    down inet     192.168.1.2/24
+                                   multiservice
+```
+```
+[edit]
+lab@dc-vmx-2# delete interfaces ge-0/0/0 disable
+
+[edit]
+lab@dc-vmx-2# show | compare
+[edit interfaces ge-0/0/0]
+-   disable;
+
+[edit]
+lab@dc-vmx-2# commit
+commit complete
+
+[edit]
+lab@dc-vmx-2# run show interfaces terse ge-0/0/0
+Interface               Admin Link Proto    Local                 Remote
+ge-0/0/0                up    up
+ge-0/0/0.0              up    up   inet     192.168.1.2/24
+                                   multiservice
+```
 ## Verify on RT GUI
 
 SaltStack created a ticket or updated an existing ticket for this issue.  
