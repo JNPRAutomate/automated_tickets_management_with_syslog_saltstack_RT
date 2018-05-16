@@ -34,18 +34,22 @@ RT REST API doc http://rt-wiki.bestpractical.com/wiki/REST
 ## install RT
 
 There is a docker image available https://hub.docker.com/r/netsandbox/request-tracker/  
+Pull the image: 
 ```
 # docker pull netsandbox/request-tracker
 ```
+Verify: 
 ```
 # docker images
 REPOSITORY                   TAG                 IMAGE ID            CREATED             SIZE
 netsandbox/request-tracker   latest              9943a8484f85        6 months ago        539MB
 ```
+Instanciate a container: 
 ```
 # docker run -d --rm --name rt -p 9081:80 netsandbox/request-tracker
 cb68b252ee39514483b8885fe6e720de51f309c18a5fdca690bdad0258f715d0
 ```
+Verify:
 ```
 # docker ps
 CONTAINER ID        IMAGE                        COMMAND                  CREATED             STATUS                  PORTS                                                 NAMES
@@ -64,12 +68,16 @@ There are python libraries that provide an easy programming interface for dealin
 - [python-rtkit](https://github.com/z4r/python-rtkit)
 - [rt](https://github.com/CZ-NIC/python-rt) 
 
-rt library installation  
+Install the rt library
 ```
 # pip install -r requests nose six rt
 ```
-rt library demo   
 ```
+# pip list
+```
+Verify using a python interactive session:
+```
+# python
 >>> import rt
 >>> tracker = rt.Rt('http://172.30.52.150:9081/REST/1.0/', 'root', 'password')
 >>> dir(tracker)
@@ -105,12 +113,45 @@ This is not covered by this documentation.
 # pip install -r requests nose six rt
 ```
 
-## Pillars 
+## Update the master configuration file
+
+Edit the salt master configuration file:  
+```
+vi /etc/salt/master
+```
+Make sure the master configuration file has these details:  
+```
+runner_dirs:
+  - /srv/runners
+```
+```
+engines:
+  - junos_syslog:
+      port: 516
+```
+```
+ext_pillar:
+  - git:
+    - master git@gitlab:organization/network_parameters.git
+```
+
+So: 
+- The runners are in the directory ```/srv/runners``` on the master
+- the Salt master is listening junos syslog messages on port 516. For each junos syslog message received, it generates an equivalent ZMQ message and publish it to the event bus
+- external pillars (variables) are in the gitlab repository ```organization/network_parameters``` (master branch)
+
+
+## Update the pillars 
 
 Update the pillars with the required rt details.  
 [Here's an example](rt_pillars.sls)
 
-## Runners 
+Verify:  
+```
+# salt-run pillar.show_pillar
+```
+
+## Update the runners 
 
 Add this [file](request_tracker_saltstack_runner.py) to your runners
 
@@ -121,7 +162,7 @@ salt-run request_tracker_saltstack_runner.create_ticket subject='test' text='tes
 ```
 salt-run request_tracker_saltstack_runner.change_ticket_status_to_resolved ticket_id=1
 ```
-##  Reactor configuration file
+## Update the reactor configuration file
 
 The reactor binds sls files to event tags. The reactor has a list of event tags to be matched, and each event tag has a list of reactor SLS files to be run. So these sls files define the SaltStack reactions.  
 
@@ -138,7 +179,7 @@ This command lists currently configured reactors:
 salt-run reactor.list
 ```
 
-## sls files
+## Update the sls files
 Create the sls file that will be fired automatically by the reactor.  
 [Here's an example](create_interface_status_change_ticket.sls)  
 
