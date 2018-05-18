@@ -4,8 +4,10 @@ Junos automation demo using SaltStack and a ticketing system (Request Tracker).
 
 ## Demo overview  
 - Junos devices send syslog messages to SaltStack.  
-- SaltStack automatically creates a new ticket (or update an existing ticket) using RT (Request Tracker) 
-
+- Based on syslog messages received from junos devices, SaltStack automatically:  
+  - Creates a new RT (Request Tracker) ticket to track this issue. If there is already an existing ticket to track this issue, SaltStack updates the existing ticket instead of creating a new one. 
+  - Collects "show commands" output from junos devices and attach the devices output to the appropriate tickets. 
+  
 ## Demo building blocks 
 - Junos  devices
 - SaltStack
