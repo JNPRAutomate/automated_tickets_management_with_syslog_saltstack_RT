@@ -115,7 +115,31 @@ True
 
 This is not covered by this documentation.
 
-## Install the rt python library 
+You need a  master and a minion.  
+You need one junos proxy daemon per device. 
+The Salt Junos proxy has some requirements (```junos-eznc``` python library and other dependencies). Install on the master or on a minion the dependencies to use a SaltStack proxy for Junos. You need to install these dependencies on each node (master/minion) that will run a junos proxy daemon(s).  
+Start one junos proxy daemon per device.  
+
+## Run basic tests 
+
+Run this command on the master to check the accepted keys: 
+```
+salt-key -L
+```
+
+Run this command on the master to make sure a proxy is up and responding to the master. This is not an ICMP ping. 
+Example with the junos proxy ```dc-vmx-2``` (it manages the network device ```dc-vmx-2```)
+```
+salt dc-vmx-2 test.ping
+```
+
+Run this additional test. Run this command on the master
+
+```
+salt core-rtr-p-02 junos.cli "show version"
+```
+
+## Install the rt python library on the master
 ```
 # pip install -r requests nose six rt
 ```
