@@ -189,6 +189,8 @@ So:
 
 ## Update the pillars 
 
+External pillars are in the gitlab repository ```network_parameters``` (master branch) of the organization ```organization```  
+
 Update the pillars with the required RT details.  
 [Here's an example](rt_pillars.sls)
 
@@ -199,11 +201,10 @@ Verify:
 ```
 # salt-run pillar.show_pillar
 ```
-
 ## Update the runners 
 
-Add this [file](request_tracker_saltstack_runner.py) to your runner directory.  
-The runners are in the directory /srv/runners on the master.  
+Add this [file](request_tracker_saltstack_runner.py) to your runner directory
+The runners are in the directory ```/srv/runners``` on the master.  
 Then, test your runner manually from the master: 
 ```
 salt-run request_tracker_saltstack_runner.create_ticket subject='test' text='test text'
@@ -217,8 +218,7 @@ The reactor binds sls files to event tags. The reactor has a list of event tags 
 
 Update your reactor configuration file (```/etc/salt/master.d/reactor.conf```)  
 
-[Here's an example](reactor.conf). This reactor configuration file binds ```jnpr/syslog/*/SNMP_TRAP_LINK_*``` to ```/srv/reactor/show_commands_collection_and_attachment_to_RT.sls
-```  
+[Here's an example](reactor.conf). This reactor configuration file binds ```jnpr/syslog/*/SNMP_TRAP_LINK_*``` to ```/srv/reactor/show_commands_collection_and_attachment_to_RT.sls```  
 
 Restart the Salt master:
 ```
@@ -230,11 +230,18 @@ This command lists currently configured reactors:
 salt-run reactor.list
 ```
 
-## Update the reactor files
+## Update the reactor sls files
 Create the sls file  ```/srv/reactor/show_commands_collection_and_attachment_to_RT.sls```  that will be fired automatically by the reactor.  
 [Here's an example](show_commands_collection_and_attachment_to_RT.sls)  
+The reactor sls file  ```/srv/reactor/show_commands_collection_and_attachment_to_RT.sls``` is referring to the runner ```/srv/runners/request_tracker_saltstack_runner.py``` and to the sls file ```junos/collect_data_locally.sls``` located in the remote file server (gitlab repository ```organization/network_model```)     
 
 ## Update the sls files 
+
+Salt uses the gitlab repository ```organization/network_model```  (master branch) as a remote file server.  
+So, the salt proxies get the files from this file server.  
+Add the sls file ```junos/collect_data_locally.sls``` to the remote file server.  
+[Here's an example](collect_data_locally.sls).  
+This file collects junos commands output referred in [these pillars](data_collection.sls)  
 
 # Junos devices 
 
