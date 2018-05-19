@@ -165,18 +165,35 @@ ext_pillar:
   - git:
     - master git@gitlab:organization/network_parameters.git
 ```
+```
+fileserver_backend:
+  - git
+  - roots
+```
+```
+gitfs_remotes:
+  - ssh://git@gitlab/organization/network_model.git
+```
+```
+file_roots:
+  base:
+    - /srv/salt
+    - /srv/local
+```
 
 So: 
 - The runners are in the directory ```/srv/runners``` on the master
 - the Salt master is listening junos syslog messages on port 516. For each junos syslog message received, it generates an equivalent ZMQ message and publish it to the event bus
 - external pillars (variables) are in the gitlab repository ```organization/network_parameters``` (master branch)
-
+- Salt uses the gitlab repository ```organization/network_model``` as a remote file server (master branch)  
 
 ## Update the pillars 
 
-Update the pillars with the required rt details.  
-
+Update the pillars with the required RT details.  
 [Here's an example](rt_pillars.sls)
+
+Update the pillars with the junos commands you want SaltStack to collect and to attach to RT.  
+[Here's an example](data_collection.sls)
 
 Verify:  
 ```
@@ -200,7 +217,8 @@ The reactor binds sls files to event tags. The reactor has a list of event tags 
 
 Update your reactor configuration file (```/etc/salt/master.d/reactor.conf```)  
 
-[Here's an example](reactor.conf). This reactor configuration file binds ```jnpr/syslog/*/SNMP_TRAP_LINK_*``` to ```/srv/reactor/create_interface_status_change_ticket.sls```  
+[Here's an example](reactor.conf). This reactor configuration file binds ```jnpr/syslog/*/SNMP_TRAP_LINK_*``` to ```/srv/reactor/show_commands_collection_and_attachment_to_RT.sls
+```  
 
 Restart the Salt master:
 ```
@@ -212,9 +230,11 @@ This command lists currently configured reactors:
 salt-run reactor.list
 ```
 
-## Update the sls files
-Create the sls file  ```/srv/reactor/create_interface_status_change_ticket.sls```  that will be fired automatically by the reactor.  
-[Here's an example](create_interface_status_change_ticket.sls)  
+## Update the reactor files
+Create the sls file  ```/srv/reactor/show_commands_collection_and_attachment_to_RT.sls```  that will be fired automatically by the reactor.  
+[Here's an example](show_commands_collection_and_attachment_to_RT.sls)  
+
+## Update the sls files 
 
 # Junos devices 
 
