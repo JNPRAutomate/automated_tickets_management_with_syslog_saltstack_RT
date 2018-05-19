@@ -133,8 +133,7 @@ Example with the junos proxy ```dc-vmx-2``` (it manages the network device ```dc
 salt dc-vmx-2 test.ping
 ```
 
-Run this additional test. Run this command on the master
-
+Run this additional test on the master
 ```
 salt dc-vmx-2 junos.cli "show version"
 ```
@@ -191,9 +190,9 @@ So:
 
 External pillars are in the gitlab repository ```organization/network_parameters``` (master branch).  
 
-Update the pillars with the required RT details. [Here's an example](rt_pillars.sls)
+Update the pillars [with the required RT details](rt_pillars.sls)  
 
-Update the pillars with the junos commands you want SaltStack to collect and to attach to RT. [Here's an example](data_collection.sls)
+Update the pillars [with the junos commands you want SaltStack to collect and to attach to RT](data_collection.sls)  
 
 Verify:  
 ```
@@ -215,8 +214,7 @@ salt-run request_tracker_saltstack_runner.change_ticket_status_to_resolved ticke
 
 The reactor binds sls files to event tags. The reactor has a list of event tags to be matched, and each event tag has a list of reactor SLS files to be run. So these sls files define the SaltStack reactions.  
 
-Update your reactor configuration file (```/etc/salt/master.d/reactor.conf```)  
-[Here's an example](reactor.conf). This reactor configuration file binds ```jnpr/syslog/*/SNMP_TRAP_LINK_*``` to ```/srv/reactor/show_commands_collection_and_attachment_to_RT.sls```  
+Update your reactor configuration file (```/etc/salt/master.d/reactor.conf```) with [this](reactor.conf). This reactor configuration file binds ```jnpr/syslog/*/SNMP_TRAP_LINK_*``` to ```/srv/reactor/show_commands_collection_and_attachment_to_RT.sls```  
 
 Restart the Salt master:
 ```
@@ -231,15 +229,14 @@ salt-run reactor.list
 ## Update the reactor sls files
 Add the [show_commands_collection_and_attachment_to_RT.sls](show_commands_collection_and_attachment_to_RT.sls) to the directory ```/srv/reactor``` on the master.  
 This file will be fired automatically by the reactor. 
-The file [show_commands_collection_and_attachment_to_RT.sls](show_commands_collection_and_attachment_to_RT.sls) is referring to the to the sls file [collect_data_locally.sls](collect_data_locally.sls) located in the directory ```junos``` of the remote file server (gitlab repository ```organization/network_model```) and to the  runner [/srv/runners/request_tracker_saltstack_runner.py](request_tracker_saltstack_runner.py)
+The file [show_commands_collection_and_attachment_to_RT.sls](show_commands_collection_and_attachment_to_RT.sls) is referring to the to the sls file [collect_data_locally.sls](collect_data_locally.sls) located in the directory ```junos``` of the remote file server (gitlab repository ```organization/network_model```) and to the runner [/srv/runners/request_tracker_saltstack_runner.py](request_tracker_saltstack_runner.py)
 
 ## Update the sls files 
 
 Salt uses the gitlab repository ```organization/network_model```  (master branch) as a remote file server.  
 So, the salt proxies get the files from this file server.  
-Add the sls file ```junos/collect_data_locally.sls``` to the remote file server.  
-[Here's an example](collect_data_locally.sls).  
-This file collects junos commands output referred in [these pillars](data_collection.sls)  
+Create the sls file ```junos/collect_data_locally.sls``` to the remote file server with [this content](collect_data_locally.sls).  
+This file collects the junos show commands output referred in [these pillars](data_collection.sls)  
 
 # Junos devices 
 
