@@ -5,47 +5,51 @@ def get_rt_pillars():
     opts = salt.config.master_config('/etc/salt/master')
     runner = salt.runner.RunnerClient(opts)
     pillar = runner.cmd('pillar.show_pillar')
-    uri = pillar['rt']['uri']
-    username = pillar['rt']['username']
-    password = pillar['rt']['password']
-    return {'uri': uri, 'username': username, 'password': password}
+    return(pillar)
 
 def connect_to_rt():
    rt_pillars=get_rt_pillars()
-   uri = rt_pillars['uri']
-   username = rt_pillars['username']
-   password = rt_pillars['password']
+   uri = rt_pillars['rt']['uri']
+   username = rt_pillars['rt']['username']
+   password = rt_pillars['rt']['password']
    tracker = rt.Rt(uri, username, password)
    tracker.login()
    return tracker
 
-def check_if_a_ticket_already_exist(subject):
-   tracker=connect_to_rt()
+def check_if_a_ticket_already_exist(subject, tracker):
    id=0
    for item in tracker.search(Queue='General'):
        if (item['Subject'] == subject) and (item['Status'] in ['open', 'new']):
            id=str(item['id']).split('/')[-1]
-   tracker.logout()
    return id
 
 def create_ticket(subject, text):
     tracker=connect_to_rt()
-    if check_if_a_ticket_already_exist(subject) == 0:
+    if check_if_a_ticket_already_exist(subject, tracker) == 0:
         ticket_id = tracker.create_ticket(Queue='General', Subject=subject, Text=text)
-        tracker.logout()
-        return ticket_id
     else:
-        ticket_id = check_if_a_ticket_already_exist(subject)
-        update_ticket(ticket_id, text)
-        tracker.logout()
-        return ticket_id
-
-def update_ticket(ticket_id, text):
-    tracker=connect_to_rt()
-    tracker.reply(ticket_id, text=text)
+        ticket_id = check_if_a_ticket_already_exist(subject, tracker)
+        update_ticket(ticket_id, text, tracker)
     tracker.logout()
+    return ticket_id
+
+def update_ticket(ticket_id, text, tracker):
+    tracker.reply(ticket_id, text=text)
+    return ticket_id
 
 def change_ticket_status_to_resolved(ticket_id):
     tracker=connect_to_rt()
     tracker.edit_ticket(ticket_id, Status="Resolved")
     tracker.logout()
+    return ticket_id
+
+def attach_files_to_ticket(subject, device_directory):
+    rt_pillars=get_rt_pillars()
+    junos_commands = rt_pillars['data_collection']
+    tracker=connect_to_rt()
+    ticket_id = check_if_a_ticket_already_exist(subject, tracker)
+    for item in junos_commands:
+        file_to_attach='/tmp/' + device_directory + '/' + item['command'] + '.txt'
+        tracker.comment(ticket_id, text='file "' + item['command'] + '.txt" attached to RT using SaltStack', files=[(file_to_attach, open(file_to_attach, 'rb'))])
+    tracker.logout()
+    return ticket_id
