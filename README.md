@@ -189,22 +189,21 @@ So:
 
 ## Update the pillars 
 
-External pillars are in the gitlab repository ```network_parameters``` (master branch) of the organization ```organization```  
+External pillars are in the gitlab repository ```organization/network_parameters``` (master branch).  
 
-Update the pillars with the required RT details.  
-[Here's an example](rt_pillars.sls)
+Update the pillars with the required RT details. [Here's an example](rt_pillars.sls)
 
-Update the pillars with the junos commands you want SaltStack to collect and to attach to RT.  
-[Here's an example](data_collection.sls)
+Update the pillars with the junos commands you want SaltStack to collect and to attach to RT. [Here's an example](data_collection.sls)
 
 Verify:  
 ```
 # salt-run pillar.show_pillar
 ```
+
 ## Update the runners 
 
-Add this [file](request_tracker_saltstack_runner.py) to your runner directory
 The runners are in the directory ```/srv/runners``` on the master.  
+Add this [file](request_tracker_saltstack_runner.py) to your runner directory.    
 Then, test your runner manually from the master: 
 ```
 salt-run request_tracker_saltstack_runner.create_ticket subject='test' text='test text'
