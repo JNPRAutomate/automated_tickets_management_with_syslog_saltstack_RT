@@ -136,7 +136,7 @@ salt dc-vmx-2 test.ping
 Run this additional test. Run this command on the master
 
 ```
-salt core-rtr-p-02 junos.cli "show version"
+salt dc-vmx-2 junos.cli "show version"
 ```
 
 ## Install the rt python library on the master
