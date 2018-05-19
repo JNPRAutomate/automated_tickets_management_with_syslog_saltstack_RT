@@ -2,6 +2,9 @@
 
 Junos automation demo using SaltStack and a ticketing system (Request Tracker). 
 
+![RT.png](RT.png)  
+
+
 ## Demo overview  
 - Junos devices send syslog messages to SaltStack.  
 - Based on syslog messages received from junos devices: 
