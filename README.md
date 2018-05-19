@@ -216,7 +216,6 @@ salt-run request_tracker_saltstack_runner.change_ticket_status_to_resolved ticke
 The reactor binds sls files to event tags. The reactor has a list of event tags to be matched, and each event tag has a list of reactor SLS files to be run. So these sls files define the SaltStack reactions.  
 
 Update your reactor configuration file (```/etc/salt/master.d/reactor.conf```)  
-
 [Here's an example](reactor.conf). This reactor configuration file binds ```jnpr/syslog/*/SNMP_TRAP_LINK_*``` to ```/srv/reactor/show_commands_collection_and_attachment_to_RT.sls```  
 
 Restart the Salt master:
@@ -230,9 +229,9 @@ salt-run reactor.list
 ```
 
 ## Update the reactor sls files
-Create the sls file  ```/srv/reactor/show_commands_collection_and_attachment_to_RT.sls```  that will be fired automatically by the reactor.  
-[Here's an example](show_commands_collection_and_attachment_to_RT.sls)  
-The reactor sls file  ```/srv/reactor/show_commands_collection_and_attachment_to_RT.sls``` is referring to the runner ```/srv/runners/request_tracker_saltstack_runner.py``` and to the sls file ```junos/collect_data_locally.sls``` located in the remote file server (gitlab repository ```organization/network_model```)     
+Add the [show_commands_collection_and_attachment_to_RT.sls](show_commands_collection_and_attachment_to_RT.sls) to the directory ```/srv/reactor``` on the master.  
+This file will be fired automatically by the reactor. 
+The file [show_commands_collection_and_attachment_to_RT.sls](show_commands_collection_and_attachment_to_RT.sls) is referring to the to the sls file [collect_data_locally.sls](collect_data_locally.sls) located in the directory ```junos``` of the remote file server (gitlab repository ```organization/network_model```) and to the  runner [/srv/runners/request_tracker_saltstack_runner.py](request_tracker_saltstack_runner.py)
 
 ## Update the sls files 
 
