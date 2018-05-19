@@ -12,7 +12,7 @@ Junos automation demo using SaltStack and a ticketing system (Request Tracker).
 - Junos  devices
 - SaltStack
 - RT (Request Tracker) 
-- Gitlab server 
+- Gitlab 
 
 ## Building blocks role 
 
@@ -29,12 +29,13 @@ Junos automation demo using SaltStack and a ticketing system (Request Tracker).
 - The sls reactor file used in this content does the following: it parses the data from the ZMQ message to extract data (the network device name, and additional details). It then passes the data extracted to a runner (python script).  
 - The runner creates a new RT (Request Tracker) ticket. If there is already an existing ticket to track this issue, SaltStack updates the existing ticket instead of creating a new one. The syslog messages are added to the appropriate tickets. "show commands" output from junos devices are collected and attached to the appropriate tickets. 
 
+### Gitlab  
+- This SaltStack setup uses a gitlab server for external pillars (variables) and as a remote file server (templates, sls files, ...).  
+
 # Request Tracker 
 
 Request Tracker (RT) is an open source issue tracking system.  
 RT REST API doc http://rt-wiki.bestpractical.com/wiki/REST  
-
-## Gitlab server  
 
 ## install RT
 
