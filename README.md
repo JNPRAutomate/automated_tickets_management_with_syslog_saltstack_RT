@@ -16,7 +16,7 @@ Junos automation demo using SaltStack and a ticketing system (Request Tracker).
 ## Building blocks role 
 
 ### Request Tracker 
-- This is the ticketing system. The tickets are automatically created and updated by SaltStack based on Junos syslog messages. 
+- This is the ticketing system. The tickets are automatically created and updated by SaltStack based on Junos syslog messages. Junos "show commands" output are automatically collected by SaltStack and attached to the appropriate tickets.  
 
 ### Junos devices
 - They send syslog messages to SaltStack
@@ -26,7 +26,7 @@ Junos automation demo using SaltStack and a ticketing system (Request Tracker).
 - The Salt master generates a ZMQ message to the event bus when a junos syslog message is received. The ZMQ message has a tag and data. The data structure is a dictionary, which contains information about the event.
 - The Salt reactor binds sls files to event tags. The reactor has a list of event tags to be matched, and each event tag has a list of reactor SLS files to be run. So these sls files define the SaltStack reactions.
 - The sls reactor file used in this content does the following: it parses the data from the ZMQ message to extract data (the network device name, and additional details). It then passes the data extracted to a runner (python script).  
-- The runner creates a new ticket (or update an existing ticket) using RT (Request Tracker) 
+- The runner creates a new RT (Request Tracker) ticket. If there is already an existing ticket to track this issue, SaltStack updates the existing ticket instead of creating a new one. The syslog messages are added to the appropriate tickets. "show commands" output from junos devices are collected and attached to the appropriate tickets. 
 
 # Request Tracker 
 
@@ -36,6 +36,11 @@ RT REST API doc http://rt-wiki.bestpractical.com/wiki/REST
 ## install RT
 
 There is a docker image available https://hub.docker.com/r/netsandbox/request-tracker/  
+
+You first need to install docker. This is not covered by this documentation.  
+
+Then:  
+
 Pull the image: 
 ```
 # docker pull netsandbox/request-tracker
@@ -57,8 +62,6 @@ Verify:
 CONTAINER ID        IMAGE                        COMMAND                  CREATED             STATUS                  PORTS                                                 NAMES
 cb68b252ee39        netsandbox/request-tracker   "/usr/sbin/apache2..."   4 seconds ago       Up 3 seconds            0.0.0.0:9081->80/tcp                                  rt
 ```
-
-
 ## RT GUI
 Access RT GUI with ```http://localhost:9081``` or ```http://host-ip:9081``` in a browser.  
 The default ```root``` user password is ```password```  
