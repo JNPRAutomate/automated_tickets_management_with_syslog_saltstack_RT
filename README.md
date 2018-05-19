@@ -186,6 +186,37 @@ So:
 - external pillars (variables) are in the gitlab repository ```organization/network_parameters``` (master branch)
 - Salt uses the gitlab repository ```organization/network_model``` as a remote file server (master branch)  
 
+## Install a Gitlab server
+
+This SaltStack setup use a gitlab server for external pillars and as remote file server.  
+
+There is a Gitlab docker image available https://hub.docker.com/r/gitlab/gitlab-ce/
+
+You first need to install docker. This step is not covered by this documentation.  
+
+Then:  
+
+Pull the image: 
+```
+# docker pull gitlab/gitlab-ce
+```
+Verify: 
+```
+# docker images
+REPOSITORY                   TAG                 IMAGE ID            CREATED             SIZE
+gitlab/gitlab-ce             latest              09b815498cc6        6 months ago        1.33GB
+```
+Instanciate a container: 
+```
+docker run -d --rm --name gitlab -p 9080:80 gitlab/gitlab-ce
+```
+Verify:
+```
+# docker ps
+CONTAINER ID        IMAGE                        COMMAND                  CREATED             STATUS                PORTS                                                 NAMES
+9e8330425d9c        gitlab/gitlab-ce             "/assets/wrapper"        5 months ago        Up 5 days (healthy)   443/tcp, 0.0.0.0:3022->22/tcp, 0.0.0.0:9080->80/tcp   gitlab
+```
+
 ## Update the pillars 
 
 External pillars are in the gitlab repository ```organization/network_parameters``` (master branch).  
