@@ -5,18 +5,18 @@ engines:
   - junos_syslog:
       port: 516
 
-ext_pillar:
-  - git:
-    - master git@gitlab:organization/network_parameters.git
+pillar_roots:
+  base:
+    - /srv/pillar
 
 fileserver_backend:
-  - git
   - roots
-
-gitfs_remotes:
-  - ssh://git@gitlab/organization/network_model.git
 
 file_roots:
   base:
     - /srv/salt
-    - /srv/local
+
+
+
+
+

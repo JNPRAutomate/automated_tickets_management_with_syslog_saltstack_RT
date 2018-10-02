@@ -8,7 +8,7 @@
 
 create_a_new_ticket_or_update_the_existing_one:
   runner.request_tracker_saltstack_runner.create_ticket:
-    - kwarg:
+    - args:
         subject: "device {{ d['hostname'] }} had its interface {{ interface }} status that changed"
         text: " {{ d['message'] }}"
 
@@ -16,11 +16,11 @@ show_commands_output_collection:
   local.state.apply:
     - tgt: "{{ d['hostname'] }}"
     - arg:
-      - junos.collect_data_locally
+      - collect_data_locally
 
 attach_files_to_a_ticket:
   runner.request_tracker_saltstack_runner.attach_files_to_ticket:
-    - kwarg:
+    - args:
         subject: "device {{ d['hostname'] }} had its interface {{ interface }} status that changed"
         device_directory: "{{ d['hostname'] }}"
     - require:

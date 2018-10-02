@@ -1,371 +1,843 @@
+# Documentation structure
+
+[About this project](#about-this-project)  
+[Lab description](#lab-description)  
+[About the demo](#about-the-demo)    
+&nbsp;&nbsp;&nbsp;&nbsp;[Overview](#overview)  
+&nbsp;&nbsp;&nbsp;&nbsp;[Details](#details)  
+&nbsp;&nbsp;&nbsp;&nbsp;[Building blocks description](#building-blocks-description)    
+[Instructions to prepare the setup](#instructions-to-prepare-the-setup)  
+&nbsp;&nbsp;&nbsp;&nbsp;[Overview](##overview-1)  
+&nbsp;&nbsp;&nbsp;&nbsp;[Clone this repository](#clone-this-repository)  
+&nbsp;&nbsp;&nbsp;&nbsp;[Install Docker](#install-docker)  
+&nbsp;&nbsp;&nbsp;&nbsp;[Instanciate a Request Tracker container](#instanciate-a-request-tracker-container)  
+&nbsp;&nbsp;&nbsp;&nbsp;[Install a python library to consume RT REST API](#install-a-python-library-to-consume-rt-rest-api)  
+&nbsp;&nbsp;&nbsp;&nbsp;[Install SaltStack](#install-saltstack)  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Overview](#overview-2)  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Install master](#install-master)   
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Install Minion](#install-minion)   
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Install requirements for SaltStack Junos proxy](#install-requirements-for-saltstack-junos-proxy)  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Install the junos syslog engine dependencies](#install-the-junos-syslog-engine-dependencies)  
+&nbsp;&nbsp;&nbsp;&nbsp;[Configure SaltStack](#configure-your-setup)  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Overview](#overview-3)  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Configure SaltStack master](#configure-saltstack-master)  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Configure SaltStack minion](#configure-saltstack-minion)  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Configure SaltStack pillars](#configure-saltstack-pillars)  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Configure SaltStack proxy](#configure-saltstack-proxy)  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Configure SaltStack files server](#configure-saltstack-files-server)  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Configure SaltStack junos syslog engine](#configure-saltstack-junos-syslog-engine)  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Configure SaltStack reactor](#configure-saltstack-reactor)  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Configure SaltStack runners](#configure-saltstack-runners)  
+&nbsp;&nbsp;&nbsp;&nbsp;[Configure Junos devices to send syslog messages to salt master](#configure-junos-devices-to-send-syslog-messages-to-salt-master)  
+[Run the demo](#run-the-demo)  
+
+
+
 # About this project 
 
-Junos automation demo using SaltStack and a ticketing system (Request Tracker). 
+Junos automation demo using SaltStack and a ticketing system (Request Tracker).  
+Based on syslog from junos, SaltStack automatically creates a new ticket or update the existing one. It also automatically collects "show commands" from junos devices and attach the devices output to the appropriate tickets.  
 
-![RT.png](RT.png)  
+For a more advanced equivalent demo, please visit the repository https://github.com/ksator/automation_summit_Q3_2018  
+
+# Lab description
+
+Building blocks:  
+- Junos (one vMX)
+- Ubuntu (one host) with Docker, RT (Request Tracker), SaltStack.  
+ 
+| hostname  | Management IP address  | Management interface  | Operating system | Version  | 
+| ------------- | ------------- | ------------- | ------------- | ------------- |
+| ubuntu | 100.123.35.1  | eth0  | ubuntu  | 16.04  |
+| vMX-1 | 100.123.1.1 | me0  | Junos  | 17.4R1-S2.2  | 
 
 
-## Demo overview  
+# About the demo 
+
+## Overview  
 - Junos devices send syslog messages to SaltStack.  
 - Based on syslog messages received from junos devices: 
-  - SaltStack automatically creates a new RT (Request Tracker) ticket to track this issue. If there is already an existing ticket to track this issue, SaltStack updates the existing ticket instead of creating a new one. The syslog messages are added to the appropriate tickets.  
+  - SaltStack automatically manages RT (Request Tracker) tickets to track this issue. 
+      - If there is already an existing ticket to track this issue, SaltStack updates the existing ticket with the new syslog message. 
+      - If there is no existing ticket to track this issue, SaltStack creates a new ticket and add the new syslog message to the new ticket.  
   - SaltStack automatically collects "show commands" output from junos devices and attach the devices output to the appropriate tickets. 
-  
-## Demo building blocks 
-- Junos  devices
-- SaltStack
-- RT (Request Tracker) 
-- Gitlab 
 
-## Building blocks role 
+![automated_tickets_management.png](automated_tickets_management.png)  
+
+
+## Details 
+
+- Here's more detailled presentations of this demo: [automated tickets management based on syslog messages](automated_tickets_management.pdf)  
+- Here's a presentation of another automated ticket management demo: [automated tickets management based on webhook notifications](OpenConfig_telemetry_demo.pdf)
+
+
+## Building blocks description
+
+### Junos
+- There is one single Junos device
+- The hostname is ```vMX-1```
+- It is configured to send ```SNMP_TRAP_LINK_UP``` and ```SNMP_TRAP_LINK_DOWN``` syslog messages to SaltStack 
 
 ### Request Tracker 
-- This is the ticketing system. The tickets are automatically created and updated by SaltStack based on Junos syslog messages. Junos "show commands" output are automatically collected by SaltStack and attached to the appropriate tickets.  
+- This is the ticketing system.  
+- The tickets are automatically created and updated by SaltStack based on Junos syslog messages. 
+- Junos "show commands" output are automatically collected by SaltStack and attached to the appropriate tickets.  
 
-### Junos devices
-- They send syslog messages to SaltStack
-
-### SaltStack  
+### SaltStack
+- This demo uses these SaltStack components: A master, a minion, a proxy, the junos_syslog engine.  
+- All in one SaltStack setup: all the above components runs on the same Ubuntu host.  
 - The Salt master listens to syslog messages sent by junos devices
-- The Salt master generates a ZMQ message to the event bus when a junos syslog message is received. The ZMQ message has a tag and data. The data structure is a dictionary, which contains information about the event.
+- The Salt master generates a ZMQ messages to the event bus when a junos syslog message is received. The ZMQ message has a tag and data. The data structure is a dictionary, which contains information about the event.
 - The Salt reactor binds sls files to event tags. The reactor has a list of event tags to be matched, and each event tag has a list of reactor SLS files to be run. So these sls files define the SaltStack reactions.
-- The sls reactor file used in this content does the following: it parses the data from the ZMQ message to extract data (the network device name, and additional details). It then passes the data extracted to a runner (python script).  
-- The runner creates a new RT (Request Tracker) ticket. If there is already an existing ticket to track this issue, SaltStack updates the existing ticket instead of creating a new one. The syslog messages are added to the appropriate tickets. "show commands" output from junos devices are collected and attached to the appropriate tickets. 
+- The reactor sls file does the following: 
+    - parses the data from the ZMQ messages to extracts the network device name
+    - searches for an existing ticket for this syslog message and device. If there is no existing ticket for this syslog message and device it will create a new one. If there is an existing ticket for this syslog message and device it will update it
+    - asks to the proxy that manages the device that sent this syslog message to collect junos show commands output 
+    - attaches to the ticket the output of the junos commands
 
-### Gitlab  
-- This SaltStack setup uses a gitlab server for external pillars (variables) and as a remote file server (templates, sls files, ...).  
 
-# Request Tracker 
+### Ubuntu
+- There is one single Ubuntu host 
+- It has SaltStack installed: all the SaltStack components described above are installed on the same Ubuntu host.   
+- It has Docker installed. It has RT (docker container)   
+
+# Instructions to prepare the setup
+
+## Overview
+
+- Clone this repository
+- Install Docker
+- Instanciate a Request Tracker container
+- Install a python library to consume RT REST API
+- Install SaltStack
+- Configure SaltStack
+- Configure Junos 
+
+ 
+## Clone this repository 
+```
+$ sudo -s
+# cd
+# git clone https://github.com/JNPRAutomate/automated_tickets_management_with_syslog_saltstack_RT.git
+# ls automated_tickets_management_with_syslog_saltstack_RT
+```
+
+## Install Docker
+
+Check if Docker is already installed
+```
+$ docker --version
+```
+
+If it was not already installed, install it:
+```
+$ sudo apt-get update
+```
+```
+$ sudo apt-get install \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    software-properties-common
+```
+```
+$ curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+```
+```
+$ sudo add-apt-repository \
+   "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+   $(lsb_release -cs) \
+   stable"
+```
+```
+$ sudo apt-get update
+```
+```
+$ sudo apt-get install docker-ce
+```
+```
+$ sudo docker run hello-world
+```
+```
+$ sudo groupadd docker
+```
+```
+$ sudo usermod -aG docker $USER
+```
+
+Exit the ssh session and open an new ssh session and run these commands to verify you installed Docker properly:  
+```
+$ docker run hello-world
+
+Hello from Docker!
+This message shows that your installation appears to be working correctly.
+
+To generate this message, Docker took the following steps:
+ 1. The Docker client contacted the Docker daemon.
+ 2. The Docker daemon pulled the "hello-world" image from the Docker Hub.
+    (amd64)
+ 3. The Docker daemon created a new container from that image which runs the
+    executable that produces the output you are currently reading.
+ 4. The Docker daemon streamed that output to the Docker client, which sent it
+    to your terminal.
+
+To try something more ambitious, you can run an Ubuntu container with:
+ $ docker run -it ubuntu bash
+
+Share images, automate workflows, and more with a free Docker ID:
+ https://hub.docker.com/
+
+For more examples and ideas, visit:
+ https://docs.docker.com/engine/userguide/
+```
+```
+$ docker --version
+Docker version 18.03.1-ce, build 9ee9f40
+```
+
+## Instanciate a Request Tracker container
 
 Request Tracker (RT) is an open source issue tracking system.  
-RT REST API doc http://rt-wiki.bestpractical.com/wiki/REST  
+There is a Request Tracker Docker image available https://hub.docker.com/r/netsandbox/request-tracker/  
 
-## install RT
+### Pull a Request Tracker Docker image
 
-There is a docker image available https://hub.docker.com/r/netsandbox/request-tracker/  
-
-You first need to install docker. This is not covered by this documentation.  
-
-Then:  
-
-Pull the image: 
+Check if you already have it locally:   
 ```
-# docker pull netsandbox/request-tracker
+$ docker images
+```
+
+if not, pull the image:
+```
+$ docker pull netsandbox/request-tracker
 ```
 Verify: 
 ```
-# docker images
+$ docker images
 REPOSITORY                   TAG                 IMAGE ID            CREATED             SIZE
-netsandbox/request-tracker   latest              9943a8484f85        6 months ago        539MB
+netsandbox/request-tracker   latest              b3843a7d4744        4 months ago        423MB
 ```
-Instanciate a container: 
-```
-# docker run -d --rm --name rt -p 9081:80 netsandbox/request-tracker
-cb68b252ee39514483b8885fe6e720de51f309c18a5fdca690bdad0258f715d0
-```
-Verify:
-```
-# docker ps
-CONTAINER ID        IMAGE                        COMMAND                  CREATED             STATUS                  PORTS                                                 NAMES
-cb68b252ee39        netsandbox/request-tracker   "/usr/sbin/apache2..."   4 seconds ago       Up 3 seconds            0.0.0.0:9081->80/tcp                                  rt
-```
-## RT GUI
-Access RT GUI with ```http://localhost:9081``` or ```http://host-ip:9081``` in a browser.  
-The default ```root``` user password is ```password```  
 
-## Python libraries for RT 
+### Instanciate a Request Tracker container
+```
+$ docker run -d --rm --name rt -p 9081:80 netsandbox/request-tracker
+```
+Verify: 
+```
+$ docker ps
+CONTAINER ID        IMAGE                        COMMAND                  CREATED             STATUS                  PORTS                                                 NAMES
+0945209bfe14        netsandbox/request-tracker   "/usr/sbin/apache2 -…"   26 hours ago        Up 26 hours             0.0.0.0:9081->80/tcp                                  rt
+```
+
+### Verify you can access to RT GUI
+
+Access RT GUI with ```http://100.123.35.1:9081``` in a browser.  
+The default ```root``` user password is ```password```
+
+## Install a python library to consume RT REST API 
 
 There are python libraries that provide an easy programming interface for dealing with RT:  
 - [rtapi](https://github.com/Rickerd0613/rtapi) 
 - [python-rtkit](https://github.com/z4r/python-rtkit)
 - [rt](https://github.com/CZ-NIC/python-rt) 
 
-Install the rt library
+### Install the ```rt``` library
+
 ```
-# pip install -r requests nose six rt
+$ sudo -s
+```
+```
+# apt-get install python-pip
+```
+```
+# pip install requests nose six rt
 ```
 Verify
 ```
 # pip list
 ```
-Double check using a python interactive session.  
-Example:  
+
+### Verify you can use ```rt``` Python library
+Python interactive session
 ```
 # python
+Python 2.7.12 (default, Dec  4 2017, 14:50:18)
+[GCC 5.4.0 20160609] on linux2
+Type "help", "copyright", "credits" or "license" for more information.
 >>> import rt
->>> tracker = rt.Rt('http://172.30.52.150:9081/REST/1.0/', 'root', 'password')
->>> dir(tracker)
-['RE_PATTERNS', '_Rt__check_response', '_Rt__correspond', '_Rt__get_status_code', '_Rt__normalize_list', '_Rt__request', '__doc__', '__init__', '__module__', 'comment', 'create_queue', 'create_ticket', 'create_user', 'default_login', 'default_password', 'default_queue', 'edit_link', 'edit_queue', 'edit_ticket', 'edit_ticket_links', 'edit_user', 'get_attachment', 'get_attachment_content', 'get_attachments', 'get_attachments_ids', 'get_history', 'get_links', 'get_queue', 'get_short_history', 'get_ticket', 'get_user', 'last_updated', 'login', 'login_result', 'logout', 'merge_ticket', 'new_correspondence', 'reply', 'search', 'session', 'steal', 'take', 'untake', 'url']
+>>> tracker = rt.Rt('http://100.123.35.1:9081/REST/1.0/', 'root', 'password')
 >>> tracker.url
-'http://172.30.52.150:9081/REST/1.0/'
+'http://100.123.35.1:9081/REST/1.0/'
 >>> tracker.login()
 True
 >>> tracker.search(Queue='General', Status='new')
-[{u'Status': u'new', u'Priority': u'0', u'Resolved': u'Not set', u'TimeLeft': u'0', u'Creator': u'root', u'Started': u'Not set', u'Starts': u'Not set', u'Created': u'Mon May 14 07:54:23 2018', u'Due': u'Not set', u'LastUpdated': u'Mon May 14 07:54:25 2018', u'FinalPriority': u'0', u'Queue': u'General', 'Requestors': [u''], u'Owner': u'Nobody', u'Told': u'Not set', u'TimeEstimated': u'0', u'InitialPriority': u'0', u'id': u'ticket/1', u'TimeWorked': u'0', u'Subject': u'Device 172.30.52.85 configuration is not inline with the golden configuration rules described in test_telnet.yml'}, {u'Status': u'new', u'Priority': u'0', u'Resolved': u'Not set', u'TimeLeft': u'0', u'Creator': u'root', u'Started': u'Not set', u'Starts': u'Not set', u'Created': u'Tue May 15 06:58:38 2018', u'Due': u'Not set', u'LastUpdated': u'Tue May 15 06:58:40 2018', u'FinalPriority': u'0', u'Queue': u'General', 'Requestors': [u''], u'Owner': u'Nobody', u'Told': u'Not set', u'TimeEstimated': u'0', u'InitialPriority': u'0', u'id': u'ticket/2', u'TimeWorked': u'0', u'Subject': u'Device 172.30.52.85 configuration is not inline with the golden configuration rules described in test_telnet.yml'}]
->>> for item in tracker.search(Queue='General', Status='new'):
-...     print item['id']
+[]
+>>> tracker.create_ticket(Queue='General', Subject='abc', Text='bla bla bla')
+1
+>>> tracker.reply(1, text='notes you want to add to the ticket 1')
+True
+>>> tracker.search(Queue='General')
+[{u'Status': u'open', u'Priority': u'3', u'Resolved': u'Not set', u'TimeLeft': u'0', u'Creator': u'root', u'Started': u'Wed Jul 11 09:30:57 2018', u'Starts': u'Not set', u'Created': u'Wed Jul 11 09:30:10 2018', u'Due': u'Not set', u'LastUpdated': u'Wed Jul 11 09:30:57 2018', u'FinalPriority': u'0', u'Queue': u'General', 'Requestors': [u''], u'Owner': u'Nobody', u'Told': u'Not set', u'TimeEstimated': u'0', u'InitialPriority': u'0', u'id': u'ticket/1', u'TimeWorked': u'0', u'Subject': u'abc'}]
+>>> for item in  tracker.search(Queue='General'):
+...    print item['id']
 ...
 ticket/1
-ticket/2
->>> tracker.create_ticket(Queue='General', Subject='abc', Text='bla bla bla')
-4
->>> tracker.edit_ticket(4, Priority=3)
-True
->>> tracker.reply(4, text='Write here the notes you want to add to the ticket')
-True
 >>> tracker.logout()
 True
+>>> exit()
 ```
 
-# Gitlab
+### Using RT GUI, verify the ticket details you created previously with Python interactive session
 
-This SaltStack setup uses a gitlab server for external pillars and as a remote file server.  
 
-## Install Gitlab
-
-There is a Gitlab docker image available https://hub.docker.com/r/gitlab/gitlab-ce/
-
-You first need to install docker. This step is not covered by this documentation.  
-
-Then:  
-
-Pull the image: 
-```
-# docker pull gitlab/gitlab-ce
-```
-
-Verify: 
-```
-# docker images
-REPOSITORY                   TAG                 IMAGE ID            CREATED             SIZE
-gitlab/gitlab-ce             latest              09b815498cc6        6 months ago        1.33GB
-```
-
-Instanciate a container: 
-```
-docker run -d --rm --name gitlab -p 9080:80 gitlab/gitlab-ce
-```
-Verify:
-```
-# docker ps
-CONTAINER ID        IMAGE                        COMMAND                  CREATED             STATUS                PORTS                                                 NAMES
-9e8330425d9c        gitlab/gitlab-ce             "/assets/wrapper"        5 months ago        Up 5 days (healthy)   443/tcp, 0.0.0.0:3022->22/tcp, 0.0.0.0:9080->80/tcp   gitlab
-```
-## Configure Gitlab
-
-Create the organization ```organization```.    
-Create the repositories ```network_parameters``` and ```network_model``` in the organization ```organization```.      
-The repository ```network_parameters``` is used for SaltStack external pillars.    
-The repository ```network_model``` is used as an external file server for SaltStack   
-
-# SaltStack
 
 ## Install SaltStack
 
-This is not covered by this documentation.
+### Overview 
 
-You need a  master and a minion.  
-You need one junos proxy daemon per device. 
-The Salt Junos proxy has some requirements (```junos-eznc``` python library and other dependencies). Install on the master or on a minion the dependencies to use a SaltStack proxy for Junos. You need to install these dependencies on each node (master/minion) that will run a junos proxy daemon(s).  
-Start one junos proxy daemon per device.  
+- Install master
+- Install minion 
+- Install requirements for SaltStack Junos proxy
+- Install requirements for SaltStack Junos_syslog engine
 
-## Run basic tests 
+### Install master
 
-Run this command on the master to check the accepted keys: 
+Check if SaltStack master is already installed
 ```
-salt-key -L
-```
-
-Run this command on the master to make sure a proxy is up and responding to the master. This is not an ICMP ping. 
-Example with the junos proxy ```dc-vmx-2``` (it manages the network device ```dc-vmx-2```)
-```
-salt dc-vmx-2 test.ping
-```
-
-Run this additional test on the master
-```
-salt dc-vmx-2 junos.cli "show version"
-```
-
-## Install the rt python library on the master
-```
-# pip install -r requests nose six rt
-```
-
-## Update the master configuration file
-
-Edit the salt master configuration file:  
-```
-vi /etc/salt/master
-```
-Make sure the master configuration file has these details:  
-```
-runner_dirs:
-  - /srv/runners
+$ sudo -s
 ```
 ```
-engines:
-  - junos_syslog:
-      port: 516
+# salt --version
 ```
 ```
-ext_pillar:
-  - git:
-    - master git@gitlab:organization/network_parameters.git
+# salt-master --version
+```
+if SaltStack master was not already installed, then install it: 
+```
+$ sudo -s
 ```
 ```
-fileserver_backend:
-  - git
-  - roots
+# wget -O - https://repo.saltstack.com/apt/ubuntu/16.04/amd64/archive/2018.3.2/SALTSTACK-GPG-KEY.pub | sudo apt-key add -
+```
+Add ```deb http://repo.saltstack.com/apt/ubuntu/16.04/amd64/archive/2018.3.2 xenial main``` in the file ```/etc/apt/sources.list.d/saltstack.list```
+```
+# touch /etc/apt/sources.list.d/saltstack.list
 ```
 ```
-gitfs_remotes:
-  - ssh://git@gitlab/organization/network_model.git
+# nano /etc/apt/sources.list.d/saltstack.list
 ```
 ```
-file_roots:
-  base:
-    - /srv/salt
-    - /srv/local
+# more /etc/apt/sources.list.d/saltstack.list
+deb http://repo.saltstack.com/apt/ubuntu/16.04/amd64/archive/2018.3.2 xenial main
+```
+```
+# sudo apt-get update
+```
+```
+# sudo apt-get install salt-master
+```
+Verify you installed properly SaltStack master 
+```
+# salt --version
+salt 2018.3.2 (Oxygen)
+```
+```
+# salt-master --version
+salt-master 2018.3.2 (Oxygen)
 ```
 
+### Install Minion
+
+Check if SaltStack minion is already installed on the ubuntu host ```minion1```  
+```
+# salt-minion --version
+```
+if SaltStack minion was not already installed, then install it: 
+```
+$ sudo -s
+```
+```
+# wget -O - https://repo.saltstack.com/apt/ubuntu/16.04/amd64/archive/2018.3.2/SALTSTACK-GPG-KEY.pub | sudo apt-key add -
+```
+Add ```deb http://repo.saltstack.com/apt/ubuntu/16.04/amd64/archive/2018.3.2 xenial main``` in the file ```/etc/apt/sources.list.d/saltstack.list```
+```
+# touch /etc/apt/sources.list.d/saltstack.list
+```
+```
+# nano /etc/apt/sources.list.d/saltstack.list
+```
+```
+# more /etc/apt/sources.list.d/saltstack.list
+deb http://repo.saltstack.com/apt/ubuntu/16.04/amd64/archive/2018.3.2 xenial main
+```
+```
+# sudo apt-get update
+```
+```
+$ sudo apt-get install salt-minion
+```
+And verify if salt-minion was installed properly installation 
+```
+# salt-minion --version
+salt-minion 2018.3.2 (Oxygen)
+```
+
+### Install requirements for SaltStack Junos proxy 
+
+The Salt Junos proxy has some requirements (```junos-eznc``` python library and other dependencies). 
+
+```
+# apt-get install python-pip
+# pip list
+# apt-get --auto-remove --yes remove python-openssl
+# pip install pyOpenSSL junos-eznc jxmlease jsnapy
+# pip list | grep "pyOpenSSL\|junos-eznc\|jxmlease\|jsnapy"
+```
+
+Verify you can use junos-eznc
+```
+# python
+Python 2.7.12 (default, Dec  4 2017, 14:50:18)
+[GCC 5.4.0 20160609] on linux2
+Type "help", "copyright", "credits" or "license" for more information.
+>>> from jnpr.junos import Device
+>>> dev=Device(host='100.123.1.1', user="jcluser", password="Juniper!1")
+>>> dev.open()
+Device(100.123.1.1)
+>>> dev.facts['version']
+'17.4R1-S2.2'
+>>> dev.close()
+>>> exit()
+```
+
+### Install the junos syslog engine dependencies
+
+Engines are executed in a separate process that is monitored by Salt. If a Salt engine stops, it is restarted automatically.  
+Engines can run on both master and minion.  To start an engine, you need to specify engine information in master/minion config file depending on where you want to run the engine. Once the engine configuration is added, start the master and minion normally. The engine should start along with the salt master/minion.   
+Junos_syslog engine  listens to syslog messages from Junos devices, extracts event information and generates and pusblishes messages on SaltStack 0MQ bus.  
+
+```
+# pip install pyparsing twisted
+# pip list | grep "pyparsing\|Twisted"
+```
+
+## Configure SaltStack
+
+### Overview 
+- Configure SaltStack master
+- Configure SaltStack minion 
+- Configure SaltStack pillar
+- Configure SaltStack proxy 
+- Configure SaltStack files server
+- Configure SaltStack junos syslog engine
+- Configure SaltStack reactor
+- Configure SaltStack runner
+
+
+
+### Configure SaltStack master
+
+#### SaltStack master configuration file
+
+Copy the [SaltStack master configuration file](master) in the file ```/etc/salt/master```
+
+```
+# cp automated_tickets_management_with_syslog_saltstack_RT/master /etc/salt/master
+```
 So: 
-- The runners are in the directory ```/srv/runners``` on the master
-- the Salt master is listening junos syslog messages on port 516. For each junos syslog message received, it generates an equivalent ZMQ message and publish it to the event bus
-- external pillars (variables) are in the gitlab repository ```organization/network_parameters``` (master branch)
-- Salt uses the gitlab repository ```organization/network_model``` as a remote file server (master branch)  
+- the Salt master is listening junos syslog messages on port 516. For each junos syslog message received, it generates an equivalent ZMQ message and publishes it to the event bus
+- The runners are in the directory ```/srv/runners``` 
+- The pillars (variables) are in the directory ```/srv/pillar```
+- The files server (states files, templates, ...) are in the directory ```/srv/salt``` 
 
-## Update the pillars 
 
-External pillars are in the gitlab repository ```organization/network_parameters``` (master branch).  
+#### Restart the salt-master service
 
-Update the pillars [with the required RT details](rt_pillars.sls)  
 
-Update the pillars [with the junos commands you want SaltStack to collect and to attach to RT](data_collection.sls)  
+```
+# service salt-master restart
+```
+#### Verify the salt-master status
 
-Verify:  
+To see the Salt processes: 
+```
+# ps -ef | grep salt
+```
+To check the status, you can run these commands: 
+```
+# systemctl status salt-master.service
+```
+```
+# service salt-master status
+```
+#### SaltStack master log
+
+```
+# more /var/log/salt/master 
+```
+```
+# tail -f /var/log/salt/master
+```
+
+### Configure SaltStack minion 
+
+#### SaltStack minion configuration file
+
+Copy the [minion configuration file](minion) in the file ```/etc/salt/minion```
+
+```
+# cp automated_tickets_management_with_syslog_saltstack_RT/minion /etc/salt/minion
+```
+
+#### Restart the salt-minion service
+
+
+```
+# service salt-minion restart
+```
+
+#### Verify the salt-minion status
+
+To see the Salt processes: 
+```
+# ps -ef | grep salt
+```
+To check the status: 
+```
+# systemctl status salt-minion.service
+```
+```
+# service salt-minion status
+```
+
+#### Verify the keys 
+
+You need to accept the minions/proxies public keys on the master.   
+
+
+To list all public keys:
+```
+# salt-key -L
+```
+To accept a specified public key:
+```
+# salt-key -a minion1 -y
+```
+Or, to accept all pending keys:
+```
+# salt-key -A -y
+```
+
+#### Verify master <-> minion communication 
+
+Run this command to make sure the minion is up and responding to the master. This is not an ICMP ping. 
+```
+# salt minion1 test.ping
+```
+Run this additionnal test  
+```
+# salt "minion1" cmd.run "pwd"
+```
+
+### Configure SaltStack pillars
+
+Pillars are variables (for templates, sls files ...).    
+They are defined in sls files, with a yaml data structure.  
+There is a ```top``` file.  
+The ```top.sls``` file map minions to sls (pillars) files.  
+
+#### Pillars configuration
+
+Refer to the [master configuration file](master) to know the location for pillars.  
+Run these commands to copy [pillars files](pillars) from this repository to the directory ```/srv/pillar``` on the master  
+
+```
+# mkdir /srv/pillar
+# cp automated_tickets_management_with_syslog_saltstack_RT/pillars/* /srv/pillar
+```
+
+#### Pillars configuration verification
+
+```
+$ sudo -s
+```
 ```
 # salt-run pillar.show_pillar
 ```
+```
+# salt-run pillar.show_pillar vMX-1
+```
 
-## Update the runners 
 
-The runners are in the directory ```/srv/runners``` on the master.  
-Add this [file](request_tracker_saltstack_runner.py) to your runner directory.    
-Then, test your runner manually from the master: 
-```
-salt-run request_tracker_saltstack_runner.create_ticket subject='test' text='test text'
-```
-```
-salt-run request_tracker_saltstack_runner.change_ticket_status_to_resolved ticket_id=1
-```
-## Update the reactor configuration file
+### Configure SaltStack proxy 
 
+#### SaltStack proxy configuration file
+
+Copy the [proxy configuration file](proxy) in the file ```/etc/salt/proxy```  
+```
+# cp automated_tickets_management_with_syslog_saltstack_RT/proxy /etc/salt/proxy
+```
+
+#### Start SaltStack proxy 
+
+You need one salt proxy process per Junos device.
+to start the proxy as a daemon for the device ```vMX-1```, run this command
+```
+# sudo salt-proxy -d --proxyid=vMX-1
+```
+The proxy daemon ```vMX-1``` manages the network device ```vMX-1```.  
+you can run this command to start it with a debug log level: 
+```
+# sudo salt-proxy -l debug --proxyid=vMX-1
+```
+To see the SaltStack processes, run this command: 
+```
+# ps -ef | grep salt
+```
+
+#### Verify the keys
+
+You need to accept the minions/proxies public keys on the master.   
+
+
+To list all public keys:
+```
+# salt-key -L
+```
+To accept a specified public key:
+```
+# salt-key -a vMX-1 -y
+```
+Or, to accept all pending keys:
+```
+# salt-key -A -y
+```
+#### Verify master <-> proxy communication
+
+Run this command to make sure the proxy is up and responding to the master. This is not an ICMP ping. 
+```
+# salt 'vMX*' test.ping
+```
+Grains are information collected from minions/proxies.  
+List the grains: 
+```
+# salt vMX-1 grains.ls
+```
+Get the value of the grain ```nodename``` to know where the proxy daemon ```vMX-1```is running: 
+```
+# salt vMX-1 grains.item nodename
+```
+Verify if the host that runs the proxy daemon has the dependencies for Junos modules (```junos-eznc``` python library and other dependencies): 
+```
+# salt minion1 cmd.run "pip list | grep junos"
+```
+Run this additionnal test. It is an execution module. The master asks to the proxy ```vMX-1``` to use an execution module
+```
+# salt 'vMX*' junos.cli "show version"
+```
+
+### Configure SaltStack files server
+
+Salt runs a files server to deliver files to minions and proxies.  
+The [master configuration file](master) indicates the location for the files server: ```/srv/salt```
+The files server has Junos configuration templates and SaltStack state files.  
+
+#### templates for Junos 
+
+Run these commands to copy these [Junos templates](templates) to the directory ```/srv/salt```
+
+```
+# mkdir /srv/salt
+# cp automated_tickets_management_with_syslog_saltstack_RT/templates/* /srv/salt
+```
+
+#### SaltStack state files
+
+Salt establishes a client-server model to bring infrastructure components in line with a given policy (salt state modules, in salt state sls files. kind of Ansible playbooks).  
+
+run these commands to copy these [states files](states) to the directory ```/srv/salt``` 
+
+
+```
+# cp automated_tickets_management_with_syslog_saltstack_RT/states/* /srv/salt
+```
+
+
+The state file [collect_data_locally.sls](states/collect_data_locally.sls) collects junos show commands output  
+```
+# more /srv/salt/collect_data_locally.sls 
+```
+
+The list of junos commands to collect is maintained with the variable ```data_collection```  
+the variable ```data_collection``` is defined in the pillar [data_collection.sls](pillars/data_collection.sls)  
+Pillars are in the directory ```/srv/pillar```  
+```
+# more /srv/pillar/data_collection.sls
+```
+
+Test your automation content:
+
+```
+# salt 'vMX*' state.apply collect_data_locally
+# ls /tmp/vMX-1/ -l
+# more /tmp/vMX-1/show\ version.txt
+```
+
+
+
+### Configure SaltStack junos syslog engine
+
+Engines are executed in a separate process that is monitored by Salt. If a Salt engine stops, it is restarted automatically.  
+Engines can run on both master and minion.  To start an engine, you need to specify engine information in master/minion config file depending on where you want to run the engine. Once the engine configuration is added, start the master and minion normally. The engine should start along with the salt master/minion.   
+Junos_syslog engine  listens to syslog messages from Junos devices, extracts event information and generates and pusblishes messages on SaltStack 0MQ bus.  
+
+We already added the junos syslog engine configuration in the [master configuration file](master) so the junos device should send their syslog messages to the master ip address on port 516. 
+
+```
+# more /etc/salt/master
+```
+
+### Configure SaltStack reactor
+
+#### Configure reactor configuration file
 The reactor binds sls files to event tags. The reactor has a list of event tags to be matched, and each event tag has a list of reactor SLS files to be run. So these sls files define the SaltStack reactions.  
 
-Update your reactor configuration file (```/etc/salt/master.d/reactor.conf```) with [this](reactor.conf). This reactor configuration file binds ```jnpr/syslog/*/SNMP_TRAP_LINK_*``` to ```/srv/reactor/show_commands_collection_and_attachment_to_RT.sls```  
+To map some events to reactor sls files, copy the [reactor configuration file](reactor.conf) to ```/etc/salt/master.d/reactor.conf```  
 
-Restart the Salt master:
 ```
-service salt-master stop
-service salt-master start
+# cp automated_tickets_management_with_syslog_saltstack_RT/reactor.conf /etc/salt/master.d/
+# more /etc/salt/master.d/reactor.conf
 ```
-This command lists currently configured reactors:  
+This reactor binds ```jnpr/syslog/*/SNMP_TRAP_LINK_*``` to ```/srv/reactor/show_commands_collection_and_attachment_to_RT.sls```  
+
+#### Restart the salt master service
 ```
-salt-run reactor.list
+# service salt-master restart
+```
+#### Verify the reactor operationnal state: 
+```
+# salt-run reactor.list
+```
+#### Add your reactor sls files
+create a ```/srv/reactor/``` directory    
+```
+# mkdir /srv/reactor/
+```
+and copy [these sls reactor files](reactor) to the directory ```/srv/reactor/```
+```
+# cp automated_tickets_management_with_syslog_saltstack_RT/reactor/* /srv/reactor/
+# ls /srv/reactor/
+# more /srv/reactor/show_commands_collection_and_attachment_to_RT.sls
 ```
 
-## Update the reactor sls files
-Add the [show_commands_collection_and_attachment_to_RT.sls](show_commands_collection_and_attachment_to_RT.sls) to the directory ```/srv/reactor``` on the master.  
-This file will be fired automatically by the reactor. 
-The file [show_commands_collection_and_attachment_to_RT.sls](show_commands_collection_and_attachment_to_RT.sls) is referring to the to the sls file [collect_data_locally.sls](collect_data_locally.sls) located in the directory ```junos``` of the remote file server (gitlab repository ```organization/network_model```) and to the runner [/srv/runners/request_tracker_saltstack_runner.py](request_tracker_saltstack_runner.py)
+The reactor [show_commands_collection_and_attachment_to_RT.sls](reactor/show_commands_collection_and_attachment_to_RT.sls): 
+- parses the data from the ZMQ message that has the tags ```jnpr/syslog/*/SNMP_TRAP_LINK_*``` and extracts the network device name
+- searches for an existing ticket for this syslog message and device. If there is no existing ticket for this syslog message and device it will create a new one. If there is an existing ticket for this syslog message and device it will update it
+- asks to the proxy that manages the device that sent this syslog message to collect junos show commands output 
+- attaches to the ticket the output of the junos commands
 
-## Update the sls files 
+The state file [collect_data_locally.sls](states/collect_data_locally.sls) executed by the proxy is located in the ```/srv/salt``` directory.  
+It collects junos show commands output  
+```
+# more /srv/salt/collect_data_locally.sls 
+```
 
-Salt uses the gitlab repository ```organization/network_model```  (master branch) as a remote file server.  
-So, the salt proxies get the files from this file server.  
-Create the sls file ```junos/collect_data_locally.sls``` to the remote file server with [this content](collect_data_locally.sls).  
-This file collects the junos show commands output referred in [these pillars](data_collection.sls)  
+The list of junos commands to collect is maintained with the variable ```data_collection```  
+the variable ```data_collection``` is defined in the pillar [data_collection.sls](pillars/data_collection.sls)  
+Pillars are in the directory ```/srv/pillar```  
+```
+# more /srv/pillar/data_collection.sls
+```
 
-# Junos devices 
+### Configure SaltStack runners
+
+The runner directory is indicated in the [master](master) configuration file
+
+create the directory ```/srv/runners/```
+```
+# mkdir /srv/runners
+```
+and add the files [runners](runners) to the directory /srv/runners/
+```
+# cp automated_tickets_management_with_syslog_saltstack_RT/runners/* /srv/runners/
+```
+Test your runner:
+
+```
+# salt-run request_tracker.create_ticket subject='test subject' text='test text'
+```
+Verify using The RT GUI. Access RT GUI with http://100.123.35.1:9081 in a browser.  
+The default ```root``` user password is ```password```
+```
+# salt-run request_tracker.change_ticket_status_to_resolved ticket_id=2
+```
+
+## Configure Junos devices to send syslog messages to salt master
 
 The Salt master is listening junos syslog messages on port 516.  
-Configure your junos devices to send the sylog messages ```SNMP_TRAP_LINK_UP``` and ```SNMP_TRAP_LINK_DOWN``` to the SaltStack master ip address on port 516.  
+The pillar [production.sls](pillars/production.sls) defines the variable ```syslog_host```.  
+the variable ```syslog_host``` is the ip address of the salt master.  
+This variable is used by the state file [syslog.sls](states/syslog.sls) to render the template [syslog.conf](templates/syslog.conf) 
+(to generate Junos configuration).  
+the state file [syslog.sls](states/syslog.sls) then loads the generated configuration to Junos devices  
+
 ```
-lab@dc-vmx-2> show configuration system syslog host 172.30.52.150 | display set
-set system syslog host 172.30.52.150 any any
-set system syslog host 172.30.52.150 match SNMP_TRAP_LINK
-set system syslog host 172.30.52.150 port 516
+# more /srv/pillar/production.sls
+# more /srv/salt/syslog.conf
+# more /srv/salt/syslog.sls
+```
+To get the value of the variable ```syslog_host```, run this command:  
+```
+# salt 'vMX-1' pillar.item syslog_host
+```
+To execute the state file [syslog.sls](states/syslog.sls), run this command:  
+```
+# salt 'vMX*' state.apply syslog
+```
+To verify, run these commands: 
+```
+# salt vMX-1 junos.cli "show system commit"
+# salt vMX-1 junos.cli "show configuration | compare rollback 1"
+# salt vMX-1 junos.cli "show configuration system syslog host 100.123.35.1"
+# salt vMX-1 junos.cli "show configuration system syslog host 100.123.35.1 | display set"
+
 ```
 
-# Run the demo 
 
-## Watch the syslog messages received by the SaltStack master
+# Run the demo
 
-Run this command on the master to see the syslog messages sent by junos devices:  
+## Verify the salt master receives syslog messages from Junos devices
+
+The Salt master is listening junos syslog messages on port 516.  
+Run this command to see the syslog messages sent by junos devices on port 516.  
+
 ```
-# tcpdump port 516 -XX 
+# tcpdump -i eth0 port 516 -vv
 ```
 
-## Watch the ZMQ messages  
+## Watch the Event bus
 
 Salt provides a runner that displays events in real-time as they are received on the Salt master.  
-Run this command on the master:   
+to watch the 0MQ event bus, run this command  
 ```
 # salt-run state.event pretty=True
 ```
 
 ## Trigger a syslog message from a junos device 
 
-ssh to a device and disable an interface. 
+Shutdown an interface of a junos device.  
 
 ```
-[edit]
-lab@dc-vmx-2# run show interfaces terse ge-0/0/0
-Interface               Admin Link Proto    Local                 Remote
-ge-0/0/0                up    up
-ge-0/0/0.0              up    up   inet     192.168.1.2/24
-                                   multiservice
-
-[edit]
-lab@dc-vmx-2# set interfaces ge-0/0/0 disable
-
-[edit]
-lab@dc-vmx-2# show | compare
-[edit interfaces ge-0/0/0]
-+   disable;
-
-[edit]
-lab@dc-vmx-2# commit
-commit complete
-
-[edit]
-lab@dc-vmx-2# run show interfaces terse ge-0/0/0
-Interface               Admin Link Proto    Local                 Remote
-ge-0/0/0                down  down
-ge-0/0/0.0              up    down inet     192.168.1.2/24
-                                   multiservice
+# salt vMX-1 junos.cli 'show interfaces terse ge-0/0/1'
+# salt vMX-1 junos.install_config 'salt://disable_interface.set' confirm=1
+# salt vMX-1 junos.cli 'show interfaces terse ge-0/0/1'
+# salt vMX-1 junos.cli 'show configuration | compare rollback 1'
 ```
-```
-[edit]
-lab@dc-vmx-2# delete interfaces ge-0/0/0 disable
 
-[edit]
-lab@dc-vmx-2# show | compare
-[edit interfaces ge-0/0/0]
--   disable;
+The operationnal state of the interface ```ge-0/0/1``` moved from up to down.  
+The junos device sent a syslog message ```SNMP_TRAP_LINK_DOWN``` to SaltStack.  
+SaltStack rans show commands on this device and attached the data collected to a ticket.  
+Verify the ticket details on the RT GUI
 
-[edit]
-lab@dc-vmx-2# commit
-commit complete
 
-[edit]
-lab@dc-vmx-2# run show interfaces terse ge-0/0/0
-Interface               Admin Link Proto    Local                 Remote
-ge-0/0/0                up    up
-ge-0/0/0.0              up    up   inet     192.168.1.2/24
-                                   multiservice
-```
-## Verify on RT GUI
 
-SaltStack created a ticket or updated an existing ticket for this issue.  
